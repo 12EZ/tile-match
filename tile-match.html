@@ -1600,8 +1600,8 @@
   };
 
   let currentLang = (() => {
-    try { return localStorage.getItem('llk:lang') || 'zh'; }
-    catch (e) { return 'zh'; }
+    try { return localStorage.getItem('llk:lang') || 'en'; }
+    catch (e) { return 'en'; }
   })();
 
   // Substitute {placeholders}; if no English mapping exists, fall back to the
@@ -1683,9 +1683,13 @@
   /* ============================================================ */
   const SFX = (() => {
     let ctx = null;
-    let muted = (() => {
+    let userMuted = (() => {
       try { return localStorage.getItem('llk:muted') === '1'; } catch (e) { return false; }
     })();
+    // Transient mute driven by the CrazyGames player chrome (not persisted).
+    // OR'd with userMuted at playback time so a platform mute never clobbers
+    // the user's own 🔊 setting.
+    let platformMuted = false;
     const lastPlay = Object.create(null); // dedupe spammy plays per sound name
 
     function ensureCtx() {
@@ -1743,7 +1747,7 @@
     };
 
     function play(name, ...args) {
-      if (muted) return;
+      if (userMuted || platformMuted) return;
       const c = ensureCtx();
       if (!c) return;
       if (c.state === 'suspended') c.resume().catch(() => {});
@@ -1755,14 +1759,18 @@
       try { SOUNDS[name](c, now, ...args); } catch (e) { /* swallow */ }
     }
     function setMuted(m) {
-      muted = !!m;
+      userMuted = !!m;
       try {
-        if (muted) localStorage.setItem('llk:muted', '1');
-        else       localStorage.removeItem('llk:muted');
+        if (userMuted) localStorage.setItem('llk:muted', '1');
+        else           localStorage.removeItem('llk:muted');
       } catch (e) {}
     }
-    function isMuted() { return muted; }
-    return { play, setMuted, isMuted, resume };
+    // Platform-driven mute (CrazyGames chrome). Not persisted — when the
+    // platform unmutes, we just clear the override and the user's setting
+    // (still in localStorage) takes back over.
+    function setPlatformMuted(m) { platformMuted = !!m; }
+    function isMuted() { return userMuted; }
+    return { play, setMuted, setPlatformMuted, isMuted, resume };
   })();
 
   /* ============================================================ */
@@ -1865,6 +1873,17 @@
         finish();
       }
     }
+
+    // CRAZYGAMES: follow the player-chrome mute toggle. This is separate
+    // from the in-game 🔊 button — when the user mutes via the CrazyGames
+    // wrapper, the SDK fires this listener and we route it through SFX's
+    // platform-mute layer so the user's own setting isn't overwritten.
+    (function registerMuteListener() {
+      const g = gameApi();
+      if (g && typeof g.addInGameMuteListener === 'function') {
+        try { g.addInGameMuteListener((m) => SFX.setPlatformMuted(!!m)); } catch (e) {}
+      }
+    })();
 
     return { isReady, gameplayStart, gameplayStop, happytime, loadingStart, loadingStop, requestAd };
   })();
