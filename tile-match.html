@@ -46,17 +46,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 26px 18px 36px;
+    padding: 14px 18px 18px;
     color: var(--text-1);
     -webkit-font-smoothing: antialiased;
     font-size: 18px;
   }
   h1 {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: var(--text-1);
-    margin-bottom: 18px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -93,14 +93,14 @@
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
     justify-content: center;
   }
   .level-tag, .feature-tag, .gravity-tag, .rule-tag {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
-    padding: 9px 18px;
+    padding: 6px 14px;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--surface);
@@ -148,7 +148,7 @@
   .hud {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     align-items: stretch;
     flex-wrap: wrap;
     justify-content: center;
@@ -158,13 +158,13 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border);
-    padding: 12px 20px;
+    padding: 8px 16px;
     border-radius: 12px;
-    min-width: 100px;
+    min-width: 92px;
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
   .hud-item .lbl {
     font-size: 13px;
@@ -174,7 +174,7 @@
     color: var(--text-3);
   }
   .hud-item .val {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--text-1);
     font-variant-numeric: tabular-nums;
@@ -213,7 +213,7 @@
   .board-wrapper {
     position: relative;
     background: var(--surface-strong);
-    padding: 16px;
+    padding: 12px;
     border-radius: 16px;
     border: 1px solid var(--border);
     box-shadow: var(--shadow-lg);
@@ -428,15 +428,15 @@
   }
 
   .legend {
-    margin-top: 16px;
+    margin-top: 8px;
     color: var(--text-2);
-    font-size: 16px;
+    font-size: 13px;
     text-align: center;
     max-width: 760px;
-    line-height: 1.7;
+    line-height: 1.5;
     background: var(--surface);
     border: 1px solid var(--border);
-    padding: 14px 24px;
+    padding: 8px 16px;
     border-radius: 12px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -2490,13 +2490,21 @@
     const isPhone  = w < 540;
     const isMobile = w < 900;
     const sidePad   = isPhone ? 20  : isMobile ? 28  : 48;
-    const reservedH = isPhone ? 230 : isMobile ? 280 : 380;
-    const wrapPad   = isPhone ? 16  : isMobile ? 20  : 32;
+    // LAYOUT: chrome heights below the board (HUD, level bar, legend, body
+    // padding). Tightened so the whole game fits in a typical 800–900px
+    // viewport without scroll. Mobile values are smaller because mobile
+    // media queries shrink HUD/legend further.
+    const reservedH = isPhone ? 170 : isMobile ? 210 : 270;
+    const wrapPad   = isPhone ? 16  : isMobile ? 20  : 24;
     const maxW = Math.min(w - sidePad, 1300);
     const maxH = Math.min(Math.max(240, h - reservedH), 1100);
     const byW = (maxW - (N - 1) * GAP - wrapPad) / N;
     const byH = (maxH - (N - 1) * GAP - wrapPad) / N;
-    const minSize = isPhone ? 28 : isMobile ? 44 : 72;
+    // minSize: floor that keeps tiles readable on each device class.
+    // Lowered from 72→56 on desktop so a 10×10 board can shrink enough
+    // to fit in shorter viewports (e.g. iframe embeds, laptops with
+    // dock+browser chrome) without forcing page scroll.
+    const minSize = isPhone ? 28 : isMobile ? 40 : 56;
     const maxSize = isPhone ? 56 : isMobile ? 80 : 110;
     return Math.max(minSize, Math.min(maxSize, Math.floor(Math.min(byW, byH))));
   }
