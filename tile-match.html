@@ -1,0 +1,4524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title data-i18n-suffix=" · Yummy Kitchen">美味厨房连连看 · Yummy Kitchen</title>
+<!-- CrazyGames SDK v2 — provides gameplayStart/Stop, ads, happytime.
+     Loaded async; missing-SDK case is handled by the CG wrapper in the JS below. -->
+<script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-0: #fff7ec;
+    --bg-1: #ffe2c2;
+    --surface: rgba(255, 255, 255, 0.72);
+    --surface-strong: rgba(255, 250, 240, 0.95);
+    --border: rgba(180, 83, 9, 0.18);
+    --border-strong: rgba(180, 83, 9, 0.38);
+    --text-1: #451a03;
+    --text-2: #7c2d12;
+    --text-3: #b45309;
+    --accent: #f97316;
+    --accent-2: #ef4444;
+    --accent-cyan: #16a34a;
+    --success: #16a34a;
+    --warning: #eab308;
+    --danger: #dc2626;
+    --tile-bg-1: #ffffff;
+    --tile-bg-2: #fff7ed;
+    --tile-locked-1: #bae6fd;
+    --tile-locked-2: #7dd3fc;
+    --shadow-sm: 0 2px 5px rgba(180, 83, 9, 0.18);
+    --shadow-lg: 0 16px 40px rgba(180, 83, 9, 0.28);
+  }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(252, 211, 77, 0.55), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(248, 113, 113, 0.35), transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 26px 18px 36px;
+    color: var(--text-1);
+    -webkit-font-smoothing: antialiased;
+    font-size: 18px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-1);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  h1 .badge {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    padding: 6px 13px;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .level-dots {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .level-dot {
+    width: 42px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-strong);
+    transition: all 0.25s ease;
+  }
+  .level-dot.done { background: var(--success); }
+  .level-dot.current {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 12px rgba(129, 140, 248, 0.5);
+  }
+  .level-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .level-tag, .feature-tag, .gravity-tag, .rule-tag {
+    font-size: 16px;
+    font-weight: 500;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    letter-spacing: 0.01em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .level-tag {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border-color: transparent;
+    font-weight: 600;
+  }
+  .gravity-tag {
+    color: var(--accent-cyan);
+    border-color: rgba(34, 211, 238, 0.3);
+  }
+  .rule-tag {
+    color: var(--text-2);
+    border-color: rgba(180, 83, 9, 0.28);
+    font-weight: 600;
+  }
+  .rule-tag.strict {
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+    animation: rulePulse 1.8s ease-in-out infinite;
+  }
+  @keyframes rulePulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25); transform: translateY(0); }
+    50%      { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.40); transform: translateY(-1px); }
+  }
+  .tile.nopath {
+    animation: noPathFlash 0.55s ease;
+  }
+  @keyframes noPathFlash {
+    0%, 100% { background: linear-gradient(145deg, var(--tile-bg-1), var(--tile-bg-2)); transform: translateX(0); }
+    20%      { background: linear-gradient(145deg, #fee2e2, #fca5a5); transform: translateX(-7px) rotate(-2deg); box-shadow: 0 0 0 3px var(--danger), 0 4px 10px rgba(220, 38, 38, 0.4); }
+    40%      { background: linear-gradient(145deg, #fee2e2, #fca5a5); transform: translateX(7px) rotate(2deg);  box-shadow: 0 0 0 3px var(--danger), 0 4px 10px rgba(220, 38, 38, 0.4); }
+    60%      { background: linear-gradient(145deg, #fee2e2, #fca5a5); transform: translateX(-5px) rotate(-1deg); box-shadow: 0 0 0 3px var(--danger), 0 4px 10px rgba(220, 38, 38, 0.4); }
+    80%      { background: linear-gradient(145deg, #fee2e2, #fca5a5); transform: translateX(5px)  rotate(1deg);  box-shadow: 0 0 0 3px var(--danger), 0 4px 10px rgba(220, 38, 38, 0.4); }
+  }
+  .hud {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: stretch;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hud-item {
+    background: var(--surface);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 12px;
+    min-width: 100px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hud-item .lbl {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .hud-item .val {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .hud-item.warn .val { color: var(--danger); animation: warnPulse 0.9s ease-in-out infinite; }
+  @keyframes warnPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+  button {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+    padding: 0 22px;
+    height: 50px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-self: center;
+  }
+  button:hover:not(:disabled) {
+    background: rgba(254, 215, 170, 0.7);
+    color: var(--text-1);
+    border-color: var(--accent);
+  }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  #menuBtn { color: var(--text-3); }
+  #menuBtn:hover:not(:disabled) { color: var(--text-1); border-color: var(--accent); }
+
+  .board-wrapper {
+    position: relative;
+    background: var(--surface-strong);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .board {
+    display: grid;
+    gap: 4px;
+    position: relative;
+  }
+  .tile {
+    background: linear-gradient(145deg, var(--tile-bg-1), var(--tile-bg-2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease, border-color 0.12s ease;
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.95);
+    border: 1px solid rgba(180, 83, 9, 0.08);
+    position: relative;
+    /* MOBILE: kill 300ms tap delay + grey flash on iOS/Android */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tile:hover:not(.empty):not(.selected):not(.locked) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4), inset 0 1px 0 rgba(255,255,255,0.95);
+    border-color: rgba(249, 115, 22, 0.55);
+  }
+  .tile.selected {
+    background: linear-gradient(145deg, #fef3c7, #fbbf24);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(249, 115, 22, 0.6), inset 0 1px 0 rgba(255,255,255,0.7);
+    border-color: var(--accent);
+  }
+  .tile.hint {
+    animation: hintFlash 0.6s ease-in-out 2;
+  }
+  @keyframes hintFlash {
+    0%, 100% {
+      background: linear-gradient(145deg, var(--tile-bg-1), var(--tile-bg-2));
+      border-color: rgba(180, 83, 9, 0.08);
+    }
+    50% {
+      background: linear-gradient(145deg, #bbf7d0, #4ade80);
+      border-color: var(--success);
+    }
+  }
+  .tile.empty {
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+    border-color: transparent;
+  }
+  .tile.locked {
+    background: linear-gradient(145deg, var(--tile-locked-1), var(--tile-locked-2));
+    cursor: not-allowed;
+    box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.35), 0 2px 6px rgba(2, 132, 199, 0.18);
+    filter: saturate(0.85) brightness(0.98);
+  }
+  .tile.locked::after {
+    content: '❄️';
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    font-size: 12px;
+    opacity: 0.95;
+  }
+  .tile.matched {
+    animation: matchedBurst 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    z-index: 10;
+    pointer-events: none;
+  }
+  @keyframes matchedBurst {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 rgba(249, 115, 22, 0), inset 0 1px 0 rgba(255,255,255,0.95);
+      background: linear-gradient(145deg, var(--tile-bg-1), var(--tile-bg-2));
+    }
+    30% {
+      transform: scale(1.3) rotate(-8deg);
+      opacity: 1;
+      box-shadow: 0 0 24px 6px rgba(239, 68, 68, 0.75), inset 0 0 14px rgba(255,255,255,0.95);
+      background: linear-gradient(145deg, #fef3c7, #fbbf24);
+    }
+    60% {
+      transform: scale(0.85) rotate(180deg);
+      opacity: 0.85;
+      box-shadow: 0 0 28px 10px rgba(251, 191, 36, 0.65);
+    }
+    100% {
+      transform: scale(0) rotate(420deg);
+      opacity: 0;
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
+  }
+  .burst-particle {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99;
+    animation: burstOut 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    box-shadow: 0 0 8px currentColor;
+  }
+  @keyframes burstOut {
+    0%   { transform: translate(0, 0) scale(1);                  opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0);  opacity: 0; }
+  }
+  .ring-pulse {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    pointer-events: none;
+    z-index: 98;
+    animation: ringExpand 0.55s ease-out forwards;
+  }
+  @keyframes ringExpand {
+    0%   { transform: scale(0.6); opacity: 0.9; border-width: 3px; }
+    100% { transform: scale(5);   opacity: 0;   border-width: 1px; }
+  }
+  .hud-item.bonus {
+    border-color: var(--success);
+    box-shadow: 0 0 22px rgba(52, 211, 153, 0.45);
+  }
+  .floating-score .time {
+    color: var(--success);
+    margin-left: 6px;
+    text-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
+  }
+  #pathCanvas { position: absolute; pointer-events: none; }
+
+  .pause-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, rgba(255, 255, 255, 0.92), rgba(255, 247, 236, 0.96));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 50;
+    cursor: pointer;
+    text-align: center;
+    color: var(--text-1);
+    user-select: none;
+    animation: pauseFadeIn 0.25s ease;
+  }
+  .pause-overlay.hidden { display: none; }
+  .pause-overlay .pause-icon  { font-size: 96px; line-height: 1; animation: pauseBob 2.4s ease-in-out infinite; }
+  .pause-overlay .pause-title { font-size: 32px; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); }
+  .pause-overlay .pause-sub   { font-size: 16px; color: var(--text-3); }
+  @keyframes pauseFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pauseBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+  #pauseBtn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border-color: transparent;
+  }
+  #soundBtn.muted { opacity: 0.55; }
+
+  .message {
+    margin-top: 18px;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 18px;
+    min-height: 30px;
+    text-align: center;
+    color: var(--text-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    max-width: 90vw;
+    line-height: 1.5;
+  }
+  .message.win {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(34, 211, 238, 0.15));
+    border-color: rgba(52, 211, 153, 0.45);
+    color: var(--success);
+    font-weight: 600;
+  }
+  .message.lose {
+    background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(251, 191, 36, 0.1));
+    border-color: rgba(251, 113, 133, 0.45);
+    color: var(--danger);
+    font-weight: 600;
+  }
+  .message.final {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(239, 68, 68, 0.22));
+    border-color: var(--accent);
+    color: var(--text-1);
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  .legend {
+    margin-top: 16px;
+    color: var(--text-2);
+    font-size: 16px;
+    text-align: center;
+    max-width: 760px;
+    line-height: 1.7;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 24px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .legend b { color: var(--text-1); font-weight: 700; }
+
+  .floating-score {
+    position: fixed;
+    pointer-events: none;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--accent);
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.85);
+    animation: floatUp 1s ease-out forwards;
+    z-index: 100;
+    font-variant-numeric: tabular-nums;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0);     opacity: 0; }
+    20%  { transform: translateY(-8px);  opacity: 1; }
+    100% { transform: translateY(-50px); opacity: 0; }
+  }
+
+  .combo-banner {
+    position: fixed;
+    top: 32%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2), var(--warning));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 4px 18px rgba(249, 115, 22, 0.6));
+    animation: comboPop 0.8s ease-out forwards;
+    z-index: 100;
+  }
+  @keyframes comboPop {
+    0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    20%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    60%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.95);opacity: 0; }
+  }
+
+  .confetti {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+    animation: confettiFall 3s linear forwards;
+    z-index: 99;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(100vh) rotate(540deg); opacity: 0; }
+  }
+
+  /* ====== Modal screens (start menu, level transitions) ====== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(120, 53, 15, 0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: 24px;
+    animation: overlayFadeIn 0.3s ease;
+  }
+  .modal-overlay.hidden { display: none; }
+  @keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .modal-card {
+    background: var(--surface-strong);
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    padding: 44px 52px;
+    max-width: 580px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    animation: cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  @keyframes cardPop {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0);      opacity: 1; }
+  }
+  .modal-card .icon-row {
+    font-size: 56px;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+  .modal-card h2 {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .modal-card .subtitle {
+    font-size: 18px;
+    color: var(--text-3);
+    margin-bottom: 28px;
+    letter-spacing: 0.04em;
+  }
+  .modal-card .body {
+    font-size: 18px;
+    color: var(--text-2);
+    line-height: 1.75;
+    text-align: left;
+    margin-bottom: 28px;
+    background: rgba(255, 247, 237, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+  .modal-card .body p { margin: 0 0 10px; }
+  .modal-card .body p:last-child { margin-bottom: 0; }
+  .modal-card .body ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  .modal-card .body li {
+    padding: 6px 0 6px 30px;
+    position: relative;
+  }
+  .modal-card .body li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .modal-card .body b { color: var(--text-1); font-weight: 700; }
+  .modal-card .body .warn { color: var(--warning); font-weight: 700; }
+  .modal-card .body .danger { color: var(--danger); font-weight: 700; }
+  .modal-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 0 0 24px;
+    flex-wrap: wrap;
+  }
+  .modal-stat {
+    background: rgba(255, 247, 237, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 22px;
+    min-width: 110px;
+  }
+  .modal-stat .lbl {
+    font-size: 13px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .modal-stat .val {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .modal-stat.accent .val {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .next-level-preview {
+    margin: 0 0 24px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(239, 68, 68, 0.12));
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    border-radius: 14px;
+    text-align: left;
+  }
+  .next-level-preview .label {
+    font-size: 13px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .next-level-preview .name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 4px;
+  }
+  .next-level-preview .desc {
+    font-size: 16px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .modal-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    justify-content: center;
+  }
+  .modal-buttons button {
+    width: 100%;
+  }
+  .primary-btn {
+    height: auto;
+    padding: 18px 40px;
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(249, 115, 22, 0.5);
+    transition: all 0.2s ease;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+  }
+  .primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 36px rgba(249, 115, 22, 0.6);
+    filter: brightness(1.12);
+  }
+  .primary-btn:active { transform: translateY(0); }
+  .secondary-btn {
+    height: auto;
+    padding: 18px 32px;
+    font-size: 18px;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--text-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .secondary-btn:hover {
+    background: rgba(254, 215, 170, 0.7);
+    color: var(--text-1);
+    border-color: var(--accent);
+  }
+  .danger-btn {
+    background: linear-gradient(135deg, var(--danger), #f59e0b);
+    box-shadow: 0 10px 28px rgba(220, 38, 38, 0.45);
+  }
+  .danger-btn:hover {
+    box-shadow: 0 14px 36px rgba(220, 38, 38, 0.55);
+  }
+  body.in-menu .game-ui { display: none; }
+
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background: var(--surface-strong);
+    border: 1.5px solid var(--accent);
+    color: var(--text-1);
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(180, 83, 9, 0.3);
+    z-index: 250;
+    animation: toastIn 0.3s ease, toastOut 0.4s ease 1.6s forwards;
+    pointer-events: none;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, -16px) scale(0.92); }
+    to   { opacity: 1; transform: translate(-50%, 0)     scale(1); }
+  }
+  @keyframes toastOut {
+    to { opacity: 0; transform: translate(-50%, -16px) scale(0.95); }
+  }
+  .next-level-preview .twist {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ============================================================ */
+  /* === PROGRESS === Phase 2 level select grid + stars + tutor   */
+  /* ============================================================ */
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 16px 0 22px;
+  }
+  .level-card {
+    background: rgba(255, 247, 237, 0.85);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    text-align: center;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .level-card:not(.locked):hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 18px rgba(249,115,22,0.25);
+  }
+  .level-card.locked { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.4); }
+  .level-card.current {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+  }
+  .level-card-num {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .level-card-stars {
+    font-size: 17px;
+    color: rgba(180, 83, 9, 0.25);
+    letter-spacing: 2px;
+    margin: 4px 0 6px;
+    line-height: 1;
+  }
+  .level-card-stars.earned {
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+  }
+  .level-card-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 3px;
+  }
+  .level-card-best {
+    font-size: 11px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  .level-card-lock {
+    font-size: 30px;
+    margin: 2px 0 6px;
+    line-height: 1;
+  }
+  .level-select-summary {
+    font-size: 14px;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    letter-spacing: 0.06em;
+  }
+  .level-select-summary b { color: var(--accent); font-size: 18px; font-weight: 800; }
+  .level-result-stars {
+    font-size: 48px;
+    letter-spacing: 8px;
+    color: #fbbf24;
+    text-shadow: 0 0 14px rgba(251, 191, 36, 0.55);
+    margin: 4px 0 14px;
+    line-height: 1;
+    animation: starsPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+  @keyframes starsPop {
+    from { transform: scale(0.4); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .tut-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 4px 0 18px;
+  }
+  .tut-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    transition: width 0.2s ease, background 0.2s ease;
+  }
+  .tut-dot.active {
+    width: 30px; border-radius: 5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+  @media (max-width: 540px) {
+    .level-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .level-card { padding: 10px 8px; }
+    .level-card-num { font-size: 18px; }
+    .level-card-name { font-size: 12px; }
+    .level-result-stars { font-size: 38px; letter-spacing: 5px; }
+  }
+
+  /* ============================================================ */
+  /* === POWERUPS === Phase 3 limited-use abilities                */
+  /* Bar sits between HUD and board. Each button shows remaining   */
+  /* uses; clicking arms it, then clicking a tile triggers the     */
+  /* effect. Time/hint power-ups fire instantly with no targeting. */
+  /* ============================================================ */
+  .powerup-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .powerup-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 14px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.18s ease;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .powerup-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    color: var(--text-1);
+    box-shadow: 0 6px 14px rgba(249,115,22,0.22);
+  }
+  .powerup-btn .pu-icon  { font-size: 22px; line-height: 1; }
+  .powerup-btn .pu-label { font-size: 13px; }
+  .powerup-btn .pu-count {
+    background: var(--accent);
+    color: white;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+    min-width: 22px;
+    text-align: center;
+  }
+  .powerup-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .powerup-btn:disabled .pu-count { background: #999; }
+  /* "Armed" — waiting for the player to click a target tile */
+  .powerup-btn.armed {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border-color: transparent;
+    animation: armedPulse 1.2s ease-in-out infinite;
+  }
+  .powerup-btn.armed .pu-count { background: rgba(0,0,0,0.25); }
+  @keyframes armedPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+    50%      { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  }
+  .board.armed-bomb,
+  .board.armed-cross { cursor: crosshair; }
+  /* When a power-up is armed, every clickable tile pulses to invite a tap */
+  .board.armed-bomb  .tile:not(.empty),
+  .board.armed-cross .tile:not(.empty) {
+    animation: targetablePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes targetablePulse {
+    0%, 100% { box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.95); }
+    50%      { box-shadow: var(--shadow-sm), inset 0 0 0 2px var(--accent); }
+  }
+  /* The shockwave that fires from the bomb's epicenter */
+  .powerup-shockwave {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    border: 4px solid var(--accent);
+    animation: shockwave 0.7s ease-out forwards;
+    z-index: 98;
+  }
+  @keyframes shockwave {
+    0%   { transform: scale(0.2); opacity: 0.95; }
+    100% { transform: scale(6);   opacity: 0; }
+  }
+  /* Light beam that streaks along the cross power-up's row + column */
+  .powerup-beam {
+    position: absolute;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+      rgba(249,115,22,0) 0%,
+      rgba(249,115,22,0.85) 45%,
+      rgba(249,115,22,0.85) 55%,
+      rgba(249,115,22,0) 100%);
+    z-index: 12;
+    border-radius: 4px;
+    animation: beamFlash 0.55s ease-out forwards;
+    box-shadow: 0 0 18px rgba(249,115,22,0.65);
+  }
+  @keyframes beamFlash {
+    0%   { opacity: 0;   transform: scaleX(0.1) scaleY(1); }
+    40%  { opacity: 1;   transform: scaleX(1) scaleY(1); }
+    100% { opacity: 0;   transform: scaleX(1) scaleY(0.6); }
+  }
+  @media (max-width: 540px) {
+    .powerup-bar { gap: 5px; margin-bottom: 10px; }
+    .powerup-btn { height: 44px; padding: 0 10px; gap: 6px; font-size: 12px; }
+    .powerup-btn .pu-icon { font-size: 18px; }
+    .powerup-btn .pu-label { display: none; }
+    .powerup-btn .pu-count { font-size: 11px; padding: 2px 6px; }
+  }
+
+  /* ============================================================ */
+  /* === MOBILE === Phase 1 responsive layout for phones/tablets  */
+  /* ============================================================ */
+  html, body {
+    /* Prevent rubber-band scroll & accidental horizontal scroll */
+    overscroll-behavior: contain;
+    overflow-x: hidden;
+  }
+  body {
+    -webkit-text-size-adjust: 100%;
+    /* CRAZYGAMES: kill long-press selection handles on iPad / mobile so tile taps don't pop the magnifier */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  button, .tile, .pause-overlay {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Tablet & smaller */
+  @media (max-width: 900px) {
+    body { padding: 18px 12px 28px; font-size: 16px; }
+    h1 { font-size: 26px; gap: 10px; margin-bottom: 14px; }
+    h1 .badge { font-size: 12px; padding: 5px 10px; }
+    .level-dots { gap: 6px; margin-bottom: 14px; }
+    .level-dot { width: 30px; height: 5px; }
+    .level-bar { gap: 6px; margin-bottom: 12px; }
+    .level-tag, .feature-tag, .gravity-tag, .rule-tag {
+      font-size: 13px; padding: 6px 12px;
+    }
+    .hud { gap: 6px; margin-bottom: 14px; }
+    .hud-item { padding: 8px 12px; min-width: 72px; }
+    .hud-item .lbl { font-size: 11px; letter-spacing: 0.1em; }
+    .hud-item .val { font-size: 20px; }
+    button {
+      font-size: 14px; height: 44px; padding: 0 14px;
+      min-width: 44px; /* meet 44px touch target */
+    }
+    .board-wrapper { padding: 10px; border-radius: 14px; }
+    .message { font-size: 15px; padding: 10px 16px; max-width: 96vw; }
+    .legend { font-size: 13px; padding: 10px 14px; line-height: 1.55; max-width: 96vw; }
+    .modal-card { padding: 28px 22px; max-width: 94vw; }
+    .modal-card h2 { font-size: 28px; }
+    .modal-card .icon-row { font-size: 44px; margin-bottom: 8px; }
+    .modal-card .subtitle { font-size: 15px; margin-bottom: 18px; }
+    .modal-card .body { font-size: 15px; padding: 14px 16px; line-height: 1.6; margin-bottom: 18px; }
+    .modal-stats { gap: 12px; margin-bottom: 18px; }
+    .modal-stat { padding: 10px 16px; min-width: 90px; }
+    .modal-stat .val { font-size: 22px; }
+    .next-level-preview { padding: 14px 16px; margin-bottom: 18px; }
+    .next-level-preview .name { font-size: 18px; }
+    .next-level-preview .desc { font-size: 14px; }
+    .primary-btn { padding: 14px 28px; font-size: 18px; }
+    .secondary-btn { padding: 14px 22px; font-size: 15px; }
+    .pause-overlay .pause-icon { font-size: 72px; }
+    .pause-overlay .pause-title { font-size: 24px; }
+    .pause-overlay .pause-sub { font-size: 14px; padding: 0 16px; }
+    .combo-banner { font-size: 32px; }
+    .toast { font-size: 15px; padding: 11px 20px; max-width: 90vw; top: 60px; }
+  }
+  /* Phone */
+  @media (max-width: 540px) {
+    body { padding: 14px 8px 24px; }
+    h1 { font-size: 22px; }
+    h1 .badge { display: none; }
+    .level-dots { display: none; }
+    .level-bar { gap: 5px; margin-bottom: 10px; }
+    .level-tag, .feature-tag, .gravity-tag, .rule-tag {
+      font-size: 12px; padding: 5px 10px;
+    }
+    .hud { gap: 5px; margin-bottom: 10px; }
+    .hud-item { padding: 6px 10px; min-width: 60px; }
+    .hud-item .lbl { font-size: 10px; }
+    .hud-item .val { font-size: 17px; }
+    button { font-size: 13px; padding: 0 12px; }
+    /* HUD button text trimming on tiny screens */
+    #hintBtn, #shuffleBtn, #pauseBtn, #menuBtn, #soundBtn { padding: 0 10px; }
+    .board-wrapper { padding: 8px; border-radius: 12px; }
+    .legend { font-size: 12px; padding: 8px 12px; }
+  }
+  /* Landscape phone — squish HUD */
+  @media (max-height: 520px) and (orientation: landscape) {
+    body { padding: 8px 8px 12px; }
+    h1 { display: none; }
+    .level-dots { display: none; }
+    .level-bar { margin-bottom: 6px; }
+    .hud { margin-bottom: 6px; }
+    .legend { display: none; }
+  }
+
+  /* ============================================================ */
+  /* === THEMES === Phase 3 swap-by-class CSS variable overrides  */
+  /* Default (kitchen) is the existing :root palette. The two     */
+  /* alternate themes only override CSS variables, so every       */
+  /* component (tiles, modals, HUD, particles) re-skins for free. */
+  /* ============================================================ */
+  body.theme-dessert {
+    --bg-0:  #fdf2f8;
+    --bg-1:  #fbcfe8;
+    --surface:        rgba(255, 255, 255, 0.78);
+    --surface-strong: rgba(253, 242, 248, 0.96);
+    --border:         rgba(157, 23, 77, 0.18);
+    --border-strong:  rgba(157, 23, 77, 0.4);
+    --text-1: #4a044e;
+    --text-2: #831843;
+    --text-3: #be185d;
+    --accent:        #ec4899;
+    --accent-2:      #a855f7;
+    --accent-cyan:   #6366f1;
+    --success:       #10b981;
+    --warning:       #f59e0b;
+    --danger:        #e11d48;
+    --tile-bg-1: #ffffff;
+    --tile-bg-2: #fdf4ff;
+    --tile-locked-1: #ddd6fe;
+    --tile-locked-2: #c4b5fd;
+    --shadow-sm: 0 2px 5px rgba(157, 23, 77, 0.18);
+    --shadow-lg: 0 16px 40px rgba(157, 23, 77, 0.28);
+  }
+  body.theme-dessert {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(244, 114, 182, 0.45), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(168, 85, 247, 0.30), transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    background-attachment: fixed;
+  }
+  body.theme-garden {
+    --bg-0:  #f0fdf4;
+    --bg-1:  #bbf7d0;
+    --surface:        rgba(255, 255, 255, 0.74);
+    --surface-strong: rgba(240, 253, 244, 0.95);
+    --border:         rgba(22, 101, 52, 0.18);
+    --border-strong:  rgba(22, 101, 52, 0.4);
+    --text-1: #14532d;
+    --text-2: #166534;
+    --text-3: #15803d;
+    --accent:        #16a34a;
+    --accent-2:      #65a30d;
+    --accent-cyan:   #06b6d4;
+    --success:       #059669;
+    --warning:       #ca8a04;
+    --danger:        #dc2626;
+    --tile-bg-1: #ffffff;
+    --tile-bg-2: #f0fdf4;
+    --tile-locked-1: #cffafe;
+    --tile-locked-2: #a5f3fc;
+    --shadow-sm: 0 2px 5px rgba(22, 101, 52, 0.18);
+    --shadow-lg: 0 16px 40px rgba(22, 101, 52, 0.26);
+  }
+  body.theme-garden {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(134, 239, 172, 0.55), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(132, 204, 22, 0.35), transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    background-attachment: fixed;
+  }
+  /* Theme picker cards */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 10px 0 22px;
+  }
+  @media (max-width: 540px) { .theme-grid { grid-template-columns: 1fr; } }
+  .theme-card {
+    background: rgba(255, 247, 237, 0.85);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 12px 14px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .theme-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .theme-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.22);
+  }
+  .theme-card .tc-icon { font-size: 40px; margin-bottom: 6px; line-height: 1; }
+  .theme-card .tc-name { font-size: 16px; font-weight: 700; color: var(--text-1); }
+  .theme-card .tc-sub  { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .theme-card .tc-swatches {
+    display: flex; justify-content: center; gap: 4px; margin-top: 10px;
+  }
+  .theme-card .tc-swatch {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+</style>
+</head>
+<body class="in-menu">
+
+  <!-- ========== Start screen (main menu) ========== -->
+  <div class="modal-overlay" id="startScreen">
+    <div class="modal-card">
+      <div class="icon-row">🍳 🍰 🍎</div>
+      <h2 data-i18n="美味厨房连连看">美味厨房连连看</h2>
+      <div class="subtitle" data-i18n="八 道 美 味 挑 战">八 道 美 味 挑 战</div>
+      <div class="body">
+        <p><b data-i18n="📋 游戏玩法">📋 游戏玩法</b></p>
+        <ul>
+          <li data-i18n-html="点击两个<b>相同</b>的食材图案即可消除">点击两个<b>相同</b>的食材图案即可消除</li>
+          <li data-i18n-html="连接路径最多 <b>两个转弯</b>（高难关卡只允许一次）">连接路径最多 <b>两个转弯</b>（高难关卡只允许一次）</li>
+          <li data-i18n="消除全部食材即可过关，进入下一道菜">消除全部食材即可过关，进入下一道菜</li>
+          <li data-i18n="每关都有不同机制：重力方向、冰冻食材等">每关都有不同机制：重力方向、冰冻食材等</li>
+        </ul>
+        <p style="margin-top: 14px;"><b data-i18n="⚠️ 重要规则">⚠️ 重要规则</b></p>
+        <p data-i18n-html="时间用完即为失败，&lt;span class=&quot;danger&quot;&gt;失败后必须从第 1 关重新开始！&lt;/span&gt;">时间用完即为失败，<span class="danger">失败后必须从第 1 关重新开始！</span></p>
+      </div>
+      <div class="modal-buttons">
+        <button class="primary-btn" id="startGameBtn" data-i18n="▶ 开始烹饪">▶ 开始烹饪</button>
+        <button class="secondary-btn" id="dailyBtn" data-i18n="📅 每日挑战">📅 每日挑战</button>
+        <button class="secondary-btn" id="endlessBtn" data-i18n="♾️ 无尽模式">♾️ 无尽模式</button>
+        <button class="secondary-btn" id="levelSelectBtn" data-i18n="🎯 选关">🎯 选关</button>
+        <button class="secondary-btn" id="themeBtn" data-i18n="🎨 主题">🎨 主题</button>
+        <button class="secondary-btn" id="langBtn">🌐 中 / EN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Transition modal (level intro / win / lose / final) ========== -->
+  <div class="modal-overlay hidden" id="transitionModal">
+    <div class="modal-card" id="transitionCard"></div>
+  </div>
+
+  <!-- ========== Game UI ========== -->
+  <div class="game-ui" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+    <h1><span data-i18n="美味厨房连连看">美味厨房连连看</span> <span class="badge" data-i18n="八 道 美 味">八 道 美 味</span></h1>
+
+    <div class="level-dots" id="levelDots"></div>
+
+    <div class="level-bar">
+      <div class="level-tag" id="levelTag">第 1 关 / 共 8 关</div>
+      <div class="feature-tag" id="featureTag">基础玩法</div>
+      <div class="gravity-tag" id="gravityTag">↓ 向下</div>
+      <div class="rule-tag" id="ruleTag">🔄 可转 2 弯</div>
+    </div>
+
+    <div class="hud">
+      <div class="hud-item" id="timerWrap">
+        <div class="lbl" data-i18n="时间">时间</div>
+        <div class="val"><span id="timer">120</span><span data-i18n="秒">秒</span></div>
+      </div>
+      <div class="hud-item">
+        <div class="lbl" data-i18n="剩余">剩余</div>
+        <div class="val"><span id="pairsLeft">0</span></div>
+      </div>
+      <div class="hud-item">
+        <div class="lbl" data-i18n="本关">本关</div>
+        <div class="val"><span id="score">0</span></div>
+      </div>
+      <div class="hud-item">
+        <div class="lbl" data-i18n="总分">总分</div>
+        <div class="val"><span id="totalScore">0</span></div>
+      </div>
+      <div class="hud-item">
+        <div class="lbl" data-i18n="连击">连击</div>
+        <div class="val">×<span id="combo">0</span></div>
+      </div>
+      <button id="hintBtn">💡 提示 · 0</button>
+      <button id="shuffleBtn">🔀 重排 · 0</button>
+      <button id="pauseBtn">⏸️ 暂停</button>
+      <button id="soundBtn" data-i18n-title="开关声音 (M)" title="开关声音 (M)">🔊</button>
+      <button id="langBtnHud" title="Language / 语言">🌐 中</button>
+      <button id="menuBtn" data-i18n="🏠 主菜单">🏠 主菜单</button>
+    </div>
+
+    <div class="powerup-bar" id="powerupBar">
+      <button class="powerup-btn" id="puBombBtn" data-pu="bomb"
+              title="炸弹：清除点击位置周围 3×3 范围内可配对的食材"
+              data-i18n-title="炸弹：清除点击位置周围 3×3 范围内可配对的食材">
+        <span class="pu-icon">💣</span><span class="pu-label" data-i18n="炸弹">炸弹</span>
+        <span class="pu-count" id="puBombCount">×0</span>
+      </button>
+      <button class="powerup-btn" id="puCrossBtn" data-pu="cross"
+              title="十字：清除点击位置同行同列内可配对的食材"
+              data-i18n-title="十字：清除点击位置同行同列内可配对的食材">
+        <span class="pu-icon">✨</span><span class="pu-label" data-i18n="十字">十字</span>
+        <span class="pu-count" id="puCrossCount">×0</span>
+      </button>
+      <button class="powerup-btn" id="puTimeBtn" data-pu="time"
+              title="额外时间：立即增加 30 秒"
+              data-i18n-title="额外时间：立即增加 30 秒">
+        <span class="pu-icon">⏱️</span><span class="pu-label">+30s</span>
+        <span class="pu-count" id="puTimeCount">×0</span>
+      </button>
+      <button class="powerup-btn" id="puHintBtn" data-pu="superHint"
+              title="超级提示：同时显示多对可消除的组合"
+              data-i18n-title="超级提示：同时显示多对可消除的组合">
+        <span class="pu-icon">🔍</span><span class="pu-label" data-i18n="超级提示">超级提示</span>
+        <span class="pu-count" id="puHintCount">×0</span>
+      </button>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+      <canvas id="pathCanvas"></canvas>
+      <div class="pause-overlay hidden" id="pauseOverlay">
+        <div class="pause-icon">⏸️</div>
+        <div class="pause-title" data-i18n="游戏已暂停">游戏已暂停</div>
+        <div class="pause-sub" data-i18n="点击此处或「▶️ 继续」按钮恢复游戏">点击此处或「▶️ 继续」按钮恢复游戏</div>
+      </div>
+    </div>
+
+    <div class="message" id="message" data-i18n="点击两个相同的食材即可消除">点击两个相同的食材即可消除</div>
+
+    <div class="legend" id="legend" data-i18n-html='<b>玩法</b> · 点击两个相同食材，路径最多 <b>两个转弯</b>（高难关卡只允许一次转弯），可绕过棋盘外边界。每关有不同机制：重力方向、冰冻食材（蓝色，需相邻消除解冻）等。<br>      <b style="color: var(--danger);">⚠️ 注意：</b>时间耗尽即失败，必须从第 1 关重新开始！'>
+      <b>玩法</b> · 点击两个相同食材，路径最多 <b>两个转弯</b>（高难关卡只允许一次转弯），可绕过棋盘外边界。每关有不同机制：重力方向、冰冻食材（蓝色，需相邻消除解冻）等。<br>
+      <b style="color: var(--danger);">⚠️ 注意：</b>时间耗尽即失败，必须从第 1 关重新开始！
+    </div>
+  </div>
+
+<script>
+(() => {
+  /* ============================================================ */
+  /* === I18N === Phase 5 Chinese ⇄ English language toggle       */
+  /* Strategy: Chinese strings stay as the canonical keys (the    */
+  /* game was originally written in Chinese, so keys are already  */
+  /* there); English is a flat dict lookup. t(key, vars) returns  */
+  /* the translated string with {placeholder} substitution. Static*/
+  /* HTML is tagged with data-i18n / data-i18n-html attributes;   */
+  /* applyStaticI18n() refreshes all of them on toggle. Dynamic   */
+  /* UI (modals, HUD) wraps text in t() and re-renders on switch. */
+  /* Choice persists in localStorage under "llk:lang".            */
+  /* ============================================================ */
+  const I18N = {
+    en: {
+      // ---- Title / brand ----
+      '美味厨房连连看': 'Yummy Kitchen Match',
+      '八 道 美 味': '8 DISHES',
+      '八 道 美 味 挑 战': '8 Delicious Challenges',
+
+      // ---- Start screen body ----
+      '📋 游戏玩法': '📋 How to Play',
+      '点击两个<b>相同</b>的食材图案即可消除': 'Click two <b>matching</b> foods to remove them',
+      '连接路径最多 <b>两个转弯</b>（高难关卡只允许一次）': 'Path can turn at most <b>twice</b> (only once on hard levels)',
+      '消除全部食材即可过关，进入下一道菜': 'Clear all foods to advance to the next dish',
+      '每关都有不同机制：重力方向、冰冻食材等': 'Each level has different mechanics: gravity, frozen foods, etc.',
+      '⚠️ 重要规则': '⚠️ Important Rules',
+      '时间用完即为失败，<span class="danger">失败后必须从第 1 关重新开始！</span>':
+        'When time runs out, you lose. <span class="danger">After failing, you must restart from Level 1!</span>',
+
+      // ---- Buttons (start screen) ----
+      '▶ 开始烹饪': '▶ Start Cooking',
+      '📅 每日挑战': '📅 Daily',
+      '♾️ 无尽模式': '♾️ Endless',
+      '🎯 选关': '🎯 Levels',
+      '🎨 主题': '🎨 Themes',
+      '🌐 中 / EN': '🌐 中 / EN',
+
+      // ---- HUD ----
+      '时间': 'TIME',
+      '剩余': 'LEFT',
+      '本关': 'SCORE',
+      '总分': 'TOTAL',
+      '连击': 'COMBO',
+      '秒': 's',
+      '⏸️ 暂停': '⏸️ Pause',
+      '▶️ 继续': '▶️ Resume',
+      '🏠 主菜单': '🏠 Menu',
+      '提示 · {n}': 'Hint · {n}',
+      '重排 · {n}': 'Shuffle · {n}',
+
+      // ---- Power-up labels + tooltips ----
+      '炸弹': 'Bomb',
+      '十字': 'Cross',
+      '超级提示': 'Super Hint',
+      '炸弹：清除点击位置周围 3×3 范围内可配对的食材':
+        'Bomb: clear matchable pairs in a 3×3 area around the clicked tile',
+      '十字：清除点击位置同行同列内可配对的食材':
+        'Cross: clear matchable pairs in the clicked tile\'s row and column',
+      '额外时间：立即增加 30 秒': 'Extra Time: instantly add 30 seconds',
+      '超级提示：同时显示多对可消除的组合': 'Super Hint: highlight several matchable pairs at once',
+      '开关声音 (M)': 'Toggle sound (M)',
+
+      // ---- Pause overlay ----
+      '游戏已暂停': 'Game Paused',
+      '点击此处或「▶️ 继续」按钮恢复游戏': 'Tap here or the "▶️ Resume" button to continue',
+
+      // ---- Default message ----
+      '点击两个相同的食材即可消除': 'Click two matching foods to remove them',
+
+      // ---- Legend ----
+      '<b>玩法</b> · 点击两个相同食材，路径最多 <b>两个转弯</b>（高难关卡只允许一次转弯），可绕过棋盘外边界。每关有不同机制：重力方向、冰冻食材（蓝色，需相邻消除解冻）等。<br>      <b style="color: var(--danger);">⚠️ 注意：</b>时间耗尽即失败，必须从第 1 关重新开始！':
+        '<b>How to play</b> · Click two matching foods. The path can turn at most <b>twice</b> (only once on hard levels) and may wrap around the board\'s edge. Each level has its own twist: gravity, frozen foods (blue — adjacent matches thaw them), etc.<br>      <b style="color: var(--danger);">⚠️ Note:</b> If time runs out you lose, and must restart from Level 1!',
+
+      // ---- Level bar ----
+      '第 {n} 关 / 共 {m} 关': 'Level {n} / {m}',
+      '第 {n} 关 / 共 {m} 关 · {name}': 'Level {n} / {m} · {name}',
+      '基础玩法': 'Basics',
+      '🔄 可转 2 弯': '🔄 Up to 2 turns',
+      '🔄 仅可转 1 弯': '🔄 Only 1 turn',
+      '📏 仅可直线': '📏 Straight only',
+
+      // ---- Gravity ----
+      '↓ 向下': '↓ Down',
+      '↑ 向上': '↑ Up',
+      '← 向左': '← Left',
+      '→ 向右': '→ Right',
+      '◇ 无重力': '◇ None',
+      '↻ 旋转': '↻ Rotate',
+      '↻ 旋转 · {dir}': '↻ Rotate · {dir}',
+      'Down': 'Down', 'Up': 'Up', 'Left': 'Left', 'Right': 'Right', 'None': 'None',
+
+      // ---- Combo banners ----
+      '好吃!': 'Tasty!',
+      '美味!': 'Delicious!',
+      '香喷喷!': 'Mouthwatering!',
+      '连击!': 'Combo!',
+      '大厨手艺!': "Chef's Skill!",
+      '米其林级!': 'Michelin Level!',
+      '神级厨艺!': 'Godly Cooking!',
+      '满汉全席!': 'Imperial Feast!',
+      '传世佳肴!': 'Legendary Dish!',
+
+      // ---- Level names ----
+      '新手厨房': 'Beginner Kitchen',
+      '食材加倍': 'Double Ingredients',
+      '反向上桌': 'Inverted Service',
+      '辣椒厨房': 'Chili Kitchen',
+      '冰冻厨房': 'Frozen Kitchen',
+      '颠勺挑战': 'Wok Toss',
+      '盲厨挑战': 'Blind Chef',
+      '总厨大考': 'Master Chef',
+
+      // ---- Level hints ----
+      '基础玩法 · 食材向下落 · 慢慢来！': 'Basics · Foods fall ↓ · Take your time!',
+      '食材种类增多 · 配对更难找': 'More food variety · pairs are harder to find',
+      '消除后食材向 ↑ 上飘 · 颠覆思路': 'Foods float ↑ after a match · flip your thinking',
+      '🌶️ 时间流逝 1.3 倍速 · 食材种类更多': '🌶️ Timer runs at 1.3× speed · more food types',
+      '❄️ 18 个冰冻食材 · 相邻消除可解冻': '❄️ 18 frozen foods · adjacent matches thaw them',
+      '🌀 每 18 秒大厨颠勺 · 加上 20 个冰冻食材': '🌀 Auto-shuffle every 18s · plus 20 frozen foods',
+      '👨‍🍳 路径只能转 1 弯 · 提示重排各 1 次': '👨‍🍳 Only 1 turn · 1 hint, 1 shuffle',
+      '🏆 旋转重力 + 冰冻 + 加速 + 只能转 1 次弯': '🏆 Rotating gravity + frozen + speed-up + 1 turn',
+      '♾️ 无尽 · 第 {n} 轮挑战': '♾️ Endless · Round {n}',
+      '📅 每日挑战 · 同样的棋盘 · 比拼分数': '📅 Daily Challenge · same board for everyone',
+
+      // ---- Theme picker ----
+      '美味厨房': 'Yummy Kitchen',
+      '甜品咖啡': 'Desserts & Coffee',
+      '森林花园': 'Forest Garden',
+      '经典美食 · 暖橙色调': 'Classic foods · warm orange',
+      '甜蜜下午茶 · 粉紫色调': 'Sweet tea-time · pink/purple',
+      '自然清新 · 翠绿色调': 'Fresh nature · emerald green',
+      '选择主题': 'Choose a Theme',
+      '换个心情玩一玩 · 偏好会自动保存': 'Try a new mood — your choice is saved',
+      '← 返回': '← Back',
+      '← 返回主菜单': '← Main Menu',
+
+      // ---- Tutorial ----
+      '欢迎来到美味厨房！': 'Welcome to Yummy Kitchen!',
+      '点击两个 <b>相同</b> 的食材即可消除。<br>消除全部食材就能过关！':
+        'Click two <b>matching</b> foods to remove them.<br>Clear them all to complete the level!',
+      '路径规则': 'Path Rules',
+      '连接两块食材的路径 <b>最多两个转弯</b>，且不能穿过其他食材。<br>路径可以从棋盘外边缘绕过哦！':
+        'A connecting path may have at most <b>two turns</b>, and cannot cross other foods.<br>It can wrap around the board\'s edge!',
+      '每关都有新机制': 'Every Level Has a Twist',
+      '↓ <b>重力</b>：消除后食材会按方向滑动<br>❄️ <b>冰冻食材</b>：相邻消除可以解冻<br>⏰ <b>限时挑战</b>：时间用完即失败<br>💡 <b>提示</b> 与 🔀 <b>重排</b> 按钮可以救场':
+        '↓ <b>Gravity</b>: foods slide after each match<br>❄️ <b>Frozen foods</b>: adjacent matches thaw them<br>⏰ <b>Time limit</b>: when time runs out, you lose<br>💡 <b>Hint</b> and 🔀 <b>Shuffle</b> can save you',
+      '← 上一步': '← Back',
+      '下一步 →': 'Next →',
+      '🍳 开始游戏': '🍳 Start',
+      '跳过': 'Skip',
+      '💡 试试连接这两块食材！': '💡 Try connecting these two!',
+
+      // ---- Modals: shared labels ----
+      '本关得分': 'This level',
+      '时间奖励': 'Time bonus',
+      '累计总分': 'Running total',
+      '最佳记录': 'Best',
+      '本次得分': 'Score',
+      '🆕 最高得分': '🆕 New best',
+      '关卡': 'Level',
+      '到达关卡': 'Reached',
+      '最终总分': 'Final total',
+      '本次最远': 'This run',
+      '历史最佳': 'All-time best',
+      '最远关卡': 'Farthest round',
+      '最高得分': 'Best score',
+      '今日最佳': "Today's best",
+      '今日尝试': 'Attempts',
+      '状态': 'Status',
+      '✅ 已通关': '✅ Cleared',
+      '⏳ 未通关': '⏳ In progress',
+
+      // ---- Modal buttons ----
+      '🔄 再玩一次': '🔄 Play Again',
+      '🔄 重玩第 {n} 关': '🔄 Replay Level {n}',
+      '🔄 回到第 1 关': '🔄 Back to Level 1',
+      '🔄 再来一次': '🔄 Try Again',
+      '🔄 再试一次': '🔄 Try Again',
+      '下一关 →': 'Next Level →',
+      '开始第 {n} 关 →': 'Start Level {n} →',
+      '▶ 开始第 {n} 关': '▶ Start Level {n}',
+      '🏠 返回主菜单': '🏠 Main Menu',
+      '▶ 开始挑战': '▶ Start',
+
+      // ---- Level-intro headers ----
+      '第 {n} 关 通关！': 'Level {n} Complete!',
+      '本关通关！得 {s} 分': 'Cleared! {s} points',
+      '本关通关！得 {s} 分 · {stars}': 'Cleared! {s} points · {stars}',
+      '本关通关！得 {s} 分（含时间奖励 {b}）· {stars}':
+        'Cleared! {s} points (includes +{b} time bonus) · {stars}',
+      '▶ 接下来': '▶ Next up',
+      '▶ 关卡介绍': '▶ Level info',
+
+      // ---- Lose modal ----
+      '时间到！': "Time's Up!",
+      '今日挑战失败 · 还可以再试一次': 'Daily Challenge failed — try again',
+      '很遗憾，本关挑战失败': 'Sorry — level failed',
+      '很遗憾，本次挑战失败': 'Sorry — challenge failed',
+      '⏰ 时间到！本关 {s} 分 · 总分 {t}': "⏰ Time's up! Level {s} pts · Total {t}",
+      '⏰ 时间到！本次得分 {s}': "⏰ Time's up! Score {s}",
+      '<p>⚠️ <span class="danger">必须从第 1 关重新开始！</span></p>':
+        '<p>⚠️ <span class="danger">You must restart from Level 1!</span></p>',
+      '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">不要灰心，再来一次吧！</p>':
+        '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">Don\'t give up — try again!</p>',
+      '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">每日挑战的棋盘只有 1 个，再战一次！</p>':
+        '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">There\'s only one daily board — give it another go!</p>',
+      '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">再来一次吧！这一关熟练后会更轻松。</p>':
+        '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">Try again — it gets easier with practice.</p>',
+
+      // ---- Final win ----
+      '恭喜全部通关！': 'You completed the campaign!',
+      '你完成了全部 {n} 道菜的挑战': 'You finished all {n} dishes',
+      '🎊 <b>你真是位大厨！</b> 🎊': "🎊 <b>You're a true chef!</b> 🎊",
+      '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">挑战自我，再来一局？</p>':
+        '<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">Challenge yourself again?</p>',
+      '🏆 全部 {n} 关通关！总分 {s}': '🏆 All {n} levels cleared! Total {s}',
+
+      // ---- Endless ----
+      '无尽模式': 'Endless Mode',
+      '每轮都比上一轮更难 · 直到时间耗尽': 'Each round is harder than the last — until time runs out',
+      '🍳 通关一轮立即进入下一轮，<b>分数累计</b>':
+        '🍳 Clear a round and the next one starts immediately — <b>scores stack</b>',
+      '📈 每轮难度递增：食材种类增加、时间缩短、规则更严':
+        '📈 Each round adds more foods, less time, stricter rules',
+      '⚠️ 时间耗尽即结束 · 看你能撑到第几轮！':
+        '⚠️ Run out of time and the run ends — how far can you go?',
+      '挑战结束': 'Run Over',
+      '🆕 新纪录诞生！': '🆕 New record!',
+      '继续挑战，刷新纪录吧': 'Keep playing — beat your record',
+      '第 {n} 轮': 'Round {n}',
+      '第 {n} 轮通关！+{s} · 累计 {t}': 'Round {n} cleared! +{s} · total {t}',
+      '第 {n} 轮通关 +{s}': 'Round {n} +{s}',
+      '▶️ 第 {n} 轮即将开始...': '▶️ Round {n} starting...',
+      '⏰ 时间到！第 {n} 轮 · 总分 {s}': "⏰ Time's up! Round {n} · Total {s}",
+      '♾️ 无尽模式 · 第 {n} 轮': '♾️ Endless · Round {n}',
+
+      // ---- Daily ----
+      '每日挑战': 'Daily Challenge',
+      '今日挑战': 'Daily',
+      '{date} · 同样的棋盘 · 比拼分数': '{date} · same board for everyone · compete on score',
+      '🌍 全世界今天玩的是 <b>同一个棋盘</b>': '🌍 Everyone plays the <b>same board</b> today',
+      '🎯 限时 {t} 秒 · 提示 {h} 次 · 重排 {s} 次': '🎯 {t}s · {h} hints · {s} shuffles',
+      '🏆 系统会保留你今天的最佳成绩': "🏆 Today's best score is saved automatically",
+      '今日挑战 通关！': 'Daily Challenge Cleared!',
+      '今日挑战通关！得 {s} 分': 'Daily cleared! {s} points',
+      '📅 今日挑战 · {date}': '📅 Daily · {date}',
+
+      // ---- Level select ----
+      '选择关卡': 'Select Level',
+      '⭐ 已获得 <b>{got}</b> / {total} 颗星': '⭐ Earned <b>{got}</b> / {total} stars',
+      ' · 🏆 最高总分 <b>{s}</b>': ' · 🏆 Best total <b>{s}</b>',
+      '未解锁': 'Locked',
+      '通过上一关解锁': 'Clear the previous level',
+      '最佳 {s}': 'Best {s}',
+      '未挑战': 'Untried',
+
+      // ---- Level descriptions / twists ----
+      '消除后向 ↓ 下方掉落': 'Foods fall ↓ down after each match',
+      '消除后向 ↑ 上方掉落': 'Foods float ↑ up after each match',
+      '消除后向 ← 左侧滑动': 'Foods slide ← left after each match',
+      '消除后向 → 右侧滑动': 'Foods slide → right after each match',
+      '无重力，方块原地不动': 'No gravity — tiles stay put',
+      '重力方向每次消除后轮换（↓ ↦ ← ↦ ↑ ↦ →）': 'Gravity rotates each match (↓ ↦ ← ↦ ↑ ↦ →)',
+      '<b>限时 {t} 秒</b> · 提示 {h} 次 · 重排 {s} 次': '<b>{t}s limit</b> · {h} hints · {s} shuffles',
+      '重力：': 'Gravity: ',
+      '🌶️ <b>时间流逝 {x}× 加速</b>，必须手快！': '🌶️ <b>Timer runs at {x}× speed</b> — be quick!',
+      '🌀 <b>每 {n} 秒大厨颠勺</b>，食材自动重排': '🌀 <b>Auto-shuffle every {n}s</b>',
+      '❄️ 冰冻食材 <b>{n}</b> 个（相邻消除可解冻）': '❄️ <b>{n}</b> frozen foods (adjacent matches thaw)',
+      '📏 路径必须为<b>直线</b>（不能转弯）': '📏 Path must be a <b>straight line</b> (no turns)',
+      '⚠️ 路径只能转 <b>1</b> 次弯': '⚠️ Path can turn only <b>once</b>',
+      '👨‍🍳 <b>没有提示和重排</b>，全靠厨艺！': '👨‍🍳 <b>No hints or shuffles</b> — pure skill!',
+      '↻ 旋转重力': '↻ Rotating gravity',
+      '🌶️ 时间 {x}× 加速': '🌶️ Timer {x}× speed',
+      '🌀 每 {n}s 自动颠勺': '🌀 Auto-shuffle every {n}s',
+      '👨‍🍳 没有提示和重排': '👨‍🍳 No hints/shuffles',
+      '❄️ {n} 个冰冻食材': '❄️ {n} frozen foods',
+      '📏 仅限直线路径': '📏 Straight only',
+      '⚠️ 路径限 1 弯': '⚠️ 1-turn only',
+      '↑ 反向重力': '↑ Inverse gravity',
+      '← 向左滑动': '← Slide left',
+      '→ 向右滑动': '→ Slide right',
+      '🍱 {n} 种食材': '🍱 {n} food types',
+      '🍳 经典模式': '🍳 Classic',
+
+      // ---- Toasts / inline messages ----
+      '🌀 大厨颠勺！食材重新摆放': '🌀 Wok toss! Foods rearranged',
+      '没有可消除的对了，自动重排中...': 'No matches available — auto-shuffling...',
+      '💣 已装填！点击棋盘上要清除的位置（3×3 范围）': '💣 Armed! Tap a tile to clear its 3×3 area',
+      '✨ 已装填！点击棋盘上要清除的位置（同行 + 同列）': '✨ Armed! Tap a tile to clear its row + column',
+      '💣 没有可配对的食材': '💣 No matchable foods nearby',
+      '✨ 同行同列没有可配对的食材': '✨ No matchable foods in row/column',
+      '⏱️ +30 秒！': '⏱️ +30 seconds!',
+      '🔍 当前没有可消除的对': '🔍 No matchable pairs right now',
+      '❌ 没有可用路径！本关只允许 直线 连接（中间不能有食材）':
+        '❌ No valid path! Only straight lines are allowed',
+      '❌ 没有可用路径！本关路径最多只能转 1 次弯':
+        '❌ No valid path! At most 1 turn allowed',
+      '❌ 没有可用路径！路径最多 2 个转弯，且不能穿过其他食材':
+        '❌ No valid path! At most 2 turns, no crossing tiles',
+
+      // ---- Confirms ----
+      '回到主菜单？当前进度将会重置。': 'Return to main menu? Current progress will be lost.'
+    }
+  };
+
+  let currentLang = (() => {
+    try { return localStorage.getItem('llk:lang') || 'zh'; }
+    catch (e) { return 'zh'; }
+  })();
+
+  // Substitute {placeholders}; if no English mapping exists, fall back to the
+  // Chinese key (so partial coverage still produces valid text). Renamed to
+  // `tr` to avoid shadowing by `const t = ...` locals scattered through the code.
+  // THEME_REMAP wins over I18N: lets dessert/garden swap flavor strings while
+  // every other key continues to use the base translation.
+  function tr(key, vars) {
+    let s;
+    const themeKey = (typeof currentTheme !== 'undefined' && currentTheme && currentTheme.key) || 'kitchen';
+    const remap = (typeof THEME_REMAP !== 'undefined') && THEME_REMAP[themeKey] && THEME_REMAP[themeKey][key];
+    if (remap && remap[currentLang]) {
+      s = remap[currentLang];
+    } else if (currentLang === 'en' && I18N.en && I18N.en[key]) {
+      s = I18N.en[key];
+    } else {
+      s = key == null ? '' : key;
+    }
+    if (vars) {
+      for (const k of Object.keys(vars)) {
+        s = s.split('{' + k + '}').join(vars[k]);
+      }
+    }
+    return s;
+  }
+
+  // Translate every node tagged with data-i18n / data-i18n-html / data-i18n-title.
+  function applyStaticI18n() {
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'zh-CN';
+    if (typeof document !== 'undefined' && document.title) {
+      document.title = tr('美味厨房连连看') + ' · Yummy Kitchen';
+    }
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = tr(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = tr(el.getAttribute('data-i18n-html'));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      el.title = tr(el.getAttribute('data-i18n-title'));
+    });
+  }
+
+  // Track whichever modal renderer is currently on screen, so we can re-run
+  // it (with the same args) when the player flips language mid-modal.
+  let lastModalRender = null;
+
+  function setLang(lang) {
+    if (lang !== 'en' && lang !== 'zh') return;
+    if (currentLang === lang) return;
+    currentLang = lang;
+    try { localStorage.setItem('llk:lang', lang); } catch (e) {}
+    applyStaticI18n();
+    // Re-render any visible dynamic UI.
+    if (typeof updateHUD === 'function' && tileEls && tileEls.length) updateHUD();
+    if (typeof refreshSoundBtn === 'function') refreshSoundBtn();
+    if (lastModalRender && transitionModal && !transitionModal.classList.contains('hidden')) {
+      try { lastModalRender(); } catch (e) {}
+    }
+    // Refresh the inline message on the board if a level is active.
+    if (currentLevelCfg && messageEl && !gameOver && !levelComplete) {
+      messageEl.textContent = tr(currentLevelCfg.hint, currentLevelCfg.hintVars);
+    }
+    // Force the start-screen language button to reflect current state.
+    const lb = document.getElementById('langBtn');
+    if (lb) lb.textContent = currentLang === 'en' ? '🌐 EN / 中' : '🌐 中 / EN';
+    const lb2 = document.getElementById('langBtnHud');
+    if (lb2) lb2.textContent = currentLang === 'en' ? '🌐 EN' : '🌐 中';
+  }
+
+  function toggleLang() { setLang(currentLang === 'en' ? 'zh' : 'en'); }
+
+  /* ============================================================ */
+  /* === AUDIO === Phase 1 lightweight WebAudio synthesizer       */
+  /* No assets — every sound is generated from oscillators.       */
+  /* AudioContext is lazily created on first user gesture, so we  */
+  /* don't trip browser autoplay policies. Mute persists in       */
+  /* localStorage under "llk:muted".                              */
+  /* ============================================================ */
+  const SFX = (() => {
+    let ctx = null;
+    let muted = (() => {
+      try { return localStorage.getItem('llk:muted') === '1'; } catch (e) { return false; }
+    })();
+    const lastPlay = Object.create(null); // dedupe spammy plays per sound name
+
+    function ensureCtx() {
+      if (ctx) return ctx;
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      try { ctx = new C(); } catch (e) { ctx = null; }
+      return ctx;
+    }
+    // iOS/Safari often suspends the context until a user gesture.
+    function resume() {
+      const c = ensureCtx();
+      if (c && c.state === 'suspended') c.resume().catch(() => {});
+    }
+    function tone(c, t, freq, dur, type, gain) {
+      const osc = c.createOscillator();
+      const g   = c.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(gain, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g).connect(c.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.04);
+    }
+    function slide(c, t, f1, f2, dur, type, gain) {
+      const osc = c.createOscillator();
+      const g   = c.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(f1, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, f2), t + dur);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(gain, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g).connect(c.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.04);
+    }
+
+    const SOUNDS = {
+      match(c, t)        { tone(c, t, 660, 0.10, 'sine', 0.18);
+                           tone(c, t + 0.05, 990, 0.14, 'sine', 0.18); },
+      // Combo rises with chain length so it feels like a streak.
+      combo(c, t, n = 1) { const base = 523.25 * Math.pow(1.122, Math.min(n, 12));
+                           tone(c, t, base, 0.12, 'triangle', 0.20);
+                           tone(c, t + 0.05, base * 1.5, 0.18, 'triangle', 0.18); },
+      invalid(c, t)      { slide(c, t, 220, 130, 0.22, 'square', 0.14); },
+      tick(c, t)         { tone(c, t, 1500, 0.05, 'square', 0.10); },
+      win(c, t)          { tone(c, t, 523.25, 0.16, 'sine', 0.18);
+                           tone(c, t + 0.10, 659.25, 0.16, 'sine', 0.20);
+                           tone(c, t + 0.20, 783.99, 0.30, 'sine', 0.22); },
+      lose(c, t)         { slide(c, t, 392, 196, 0.55, 'sawtooth', 0.16); },
+      click(c, t)        { tone(c, t, 880, 0.04, 'square', 0.06); }
+    };
+
+    function play(name, ...args) {
+      if (muted) return;
+      const c = ensureCtx();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(() => {});
+      const now = c.currentTime;
+      // Dedupe rapid duplicates (≤30ms) to avoid harsh stacking
+      const last = lastPlay[name] || 0;
+      if (now - last < 0.03) return;
+      lastPlay[name] = now;
+      try { SOUNDS[name](c, now, ...args); } catch (e) { /* swallow */ }
+    }
+    function setMuted(m) {
+      muted = !!m;
+      try {
+        if (muted) localStorage.setItem('llk:muted', '1');
+        else       localStorage.removeItem('llk:muted');
+      } catch (e) {}
+    }
+    function isMuted() { return muted; }
+    return { play, setMuted, isMuted, resume };
+  })();
+
+  /* ============================================================ */
+  /* === CRAZYGAMES === Phase 7 SDK wrapper                       */
+  /* Wraps window.CrazyGames.SDK so the rest of the codebase can  */
+  /* call CG.gameplayStart() / Stop() / ad('midgame') / happytime */
+  /* without worrying about the SDK being absent (local dev) or   */
+  /* throwing. Every entry point is defensive: if the SDK isn't   */
+  /* loaded yet, the call is a no-op.                             */
+  /*                                                              */
+  /* Audio handling: ad callbacks mute SFX during ad playback +   */
+  /* restore the previous mute state when the ad ends. The "user" */
+  /* mute state (set via the 🔊 button) is preserved across ads.  */
+  /*                                                              */
+  /* Ad cadence: midgame ad before every other campaign level     */
+  /* transition (levels 2/4/6) and every 2nd endless round. This  */
+  /* respects CrazyGames' "don't spam ads" guidance while still   */
+  /* satisfying the basic monetization requirement.               */
+  /* ============================================================ */
+  const CG = (() => {
+    function api()      { return (window.CrazyGames && window.CrazyGames.SDK) || null; }
+    function gameApi()  { const s = api(); return s && s.game; }
+    function adApi()    { const s = api(); return s && s.ad; }
+    function isReady()  { return api() !== null; }
+
+    let mutedByAd = false;        // track ad-driven mute so we don't clobber the user's setting
+    let userWasMuted = false;
+    let inGameplay = false;       // dedupe consecutive gameplayStart/Stop calls
+
+    function gameplayStart() {
+      if (inGameplay) return;
+      inGameplay = true;
+      const g = gameApi();
+      if (g && typeof g.gameplayStart === 'function') {
+        try { g.gameplayStart(); } catch (e) { /* swallow */ }
+      }
+    }
+    function gameplayStop() {
+      if (!inGameplay) return;
+      inGameplay = false;
+      const g = gameApi();
+      if (g && typeof g.gameplayStop === 'function') {
+        try { g.gameplayStop(); } catch (e) {}
+      }
+    }
+    function happytime() {
+      const g = gameApi();
+      if (g && typeof g.happytime === 'function') {
+        try { g.happytime(); } catch (e) {}
+      }
+    }
+    function loadingStart() {
+      const g = gameApi();
+      if (g && typeof g.sdkGameLoadingStart === 'function') {
+        try { g.sdkGameLoadingStart(); } catch (e) {}
+      }
+    }
+    function loadingStop() {
+      const g = gameApi();
+      if (g && typeof g.sdkGameLoadingStop === 'function') {
+        try { g.sdkGameLoadingStop(); } catch (e) {}
+      }
+    }
+
+    // Ask the SDK for an ad. `type` is "midgame" or "rewarded".
+    // `onFinished` fires whether the ad played, errored, or was skipped —
+    // safe to use for "now resume the game" cleanup.
+    function requestAd(type, onFinished) {
+      const a = adApi();
+      const finish = () => { try { onFinished && onFinished(); } catch (e) {} };
+      if (!a || typeof a.requestAd !== 'function') {
+        // Local dev / SDK absent — invoke the callback so gameplay still resumes.
+        finish();
+        return;
+      }
+      // Ad in progress: gameplay must be paused (CrazyGames requirement) +
+      // mute audio so it doesn't fight the ad.
+      gameplayStop();
+      userWasMuted = SFX.isMuted();
+      try {
+        a.requestAd(type || 'midgame', {
+          adStarted: () => {
+            mutedByAd = true;
+            if (!userWasMuted) SFX.setMuted(true);
+          },
+          adFinished: () => {
+            if (mutedByAd && !userWasMuted) SFX.setMuted(false);
+            mutedByAd = false;
+            finish();
+          },
+          adError: () => {
+            if (mutedByAd && !userWasMuted) SFX.setMuted(false);
+            mutedByAd = false;
+            finish();
+          }
+        });
+      } catch (e) {
+        if (mutedByAd && !userWasMuted) SFX.setMuted(false);
+        mutedByAd = false;
+        finish();
+      }
+    }
+
+    return { isReady, gameplayStart, gameplayStop, happytime, loadingStart, loadingStop, requestAd };
+  })();
+
+  /* ============================================================ */
+  /* === PROGRESS === Phase 2 persistence layer                   */
+  /* Saves are namespaced under the "llk:" prefix and written to  */
+  /* TWO backends in lockstep:                                    */
+  /*                                                              */
+  /*   1. CrazyGames Data module (window.CrazyGames.SDK.data)     */
+  /*      — sync API, mirrors the localStorage interface          */
+  /*      — when the player is signed in to a CrazyGames account, */
+  /*        saves auto-sync across devices. When they're a guest, */
+  /*        the SDK transfers the guest blob to the account on    */
+  /*        first sign-in (handled by the SDK, not us).           */
+  /*                                                              */
+  /*   2. localStorage                                            */
+  /*      — works on any origin, including local file:// dev      */
+  /*      — survives if the SDK fails to load                     */
+  /*      — kept in sync as a mirror so the player never sees     */
+  /*        progress disappear because of a network blip          */
+  /*                                                              */
+  /* Reads prefer the CG Data module (cross-device, authoritative */
+  /* once the user signs in) and fall back to localStorage if the */
+  /* CG entry is missing. Every method swallows storage errors so */
+  /* the game stays playable in private mode / quota-exceeded /   */
+  /* SDK-absent / disabled-cookies scenarios.                     */
+  /* ============================================================ */
+  const Storage = (() => {
+    const PREFIX = 'llk:';
+
+    function cgData() {
+      const sdk = window.CrazyGames && window.CrazyGames.SDK;
+      return (sdk && sdk.data) || null;
+    }
+    function lsRead(k)  { try { return localStorage.getItem(PREFIX + k); } catch (e) { return null; } }
+    function lsWrite(k, v) { try { localStorage.setItem(PREFIX + k, v); } catch (e) {} }
+    function cgRead(k) {
+      const d = cgData();
+      if (!d) return null;
+      try { return d.getItem(PREFIX + k); } catch (e) { return null; }
+    }
+    function cgWrite(k, v) {
+      const d = cgData();
+      if (!d) return;
+      try { d.setItem(PREFIX + k, v); } catch (e) {}
+    }
+
+    function readRaw(k, def) {
+      // CG Data is authoritative once available — it's the cross-device blob.
+      const cg = cgRead(k);
+      if (cg != null) return cg;
+      const ls = lsRead(k);
+      return ls == null ? def : ls;
+    }
+    function writeRaw(k, v) {
+      cgWrite(k, v);
+      lsWrite(k, v);
+    }
+    function readJSON(k, def) {
+      const v = readRaw(k, null);
+      if (v == null) return def;
+      try { return JSON.parse(v); } catch (e) { return def; }
+    }
+    function writeJSON(k, v) { writeRaw(k, JSON.stringify(v)); }
+
+    return {
+      getLevelData(idx) {
+        return readJSON('level:' + idx, { stars: 0, bestScore: 0 });
+      },
+      // Best-of-attempt: never decrease stars or bestScore.
+      saveLevelResult(idx, stars, bestScore) {
+        const cur = this.getLevelData(idx);
+        writeJSON('level:' + idx, {
+          stars: Math.max(cur.stars || 0, stars || 0),
+          bestScore: Math.max(cur.bestScore || 0, bestScore || 0)
+        });
+      },
+      isLevelUnlocked(idx) {
+        if (idx === 0) return true;
+        return (this.getLevelData(idx - 1).stars || 0) > 0;
+      },
+      isTutorialDone() { return readRaw('tutorialDone', null) === '1'; },
+      setTutorialDone() { writeRaw('tutorialDone', '1'); },
+      resetTutorial()   { writeRaw('tutorialDone', '0'); },
+      getBestTotal()    { return parseInt(readRaw('bestTotal', '0'), 10) || 0; },
+      saveBestTotal(v)  { if (v > this.getBestTotal()) writeRaw('bestTotal', String(v)); },
+      getTheme()        { return readRaw('theme', 'kitchen'); },
+      setTheme(key)     { writeRaw('theme', key); },
+      // ENDLESS: best round reached + best total score (best-of-runs)
+      getEndlessBest()  { return readJSON('endless', { round: 0, score: 0 }); },
+      saveEndlessBest(round, score) {
+        const cur = this.getEndlessBest();
+        writeJSON('endless', {
+          round: Math.max(cur.round || 0, round || 0),
+          score: Math.max(cur.score || 0, score || 0)
+        });
+      },
+      // DAILY: today's best score + completion + attempts. Resets when date changes.
+      getDailyResult() {
+        return readJSON('daily', { date: '', score: 0, completed: false, attempts: 0 });
+      },
+      recordDailyAttempt(date, score, completed) {
+        const cur = this.getDailyResult();
+        if (cur.date !== date) {
+          writeJSON('daily', { date, score, completed, attempts: 1 });
+        } else {
+          writeJSON('daily', {
+            date,
+            score: Math.max(cur.score || 0, score || 0),
+            completed: cur.completed || completed,
+            attempts: (cur.attempts || 0) + 1
+          });
+        }
+      }
+    };
+  })();
+
+  // Stars are based on real-time spent vs the level's allotted time.
+  // The +TIME_BONUS-per-match makes the on-screen timer unreliable as a
+  // proxy for "how fast", so we measure wall-clock elapsed instead.
+  function calcStars(elapsedSec, timeLimit) {
+    const ratio = elapsedSec / timeLimit;
+    if (ratio < 0.5)  return 3; // blazing — finished in under half the budget
+    if (ratio < 0.85) return 2; // solid
+    return 1;                   // squeaked through
+  }
+
+  const ALL_FOODS = [
+    '🍎','🍊','🍋','🍌','🍓','🍇','🍉','🍒','🍑','🥭',
+    '🍍','🥝','🥥','🍈','🥑','🍅','🌽','🥕','🥦','🥬',
+    '🥒','🍆','🌶️','🧅','🧄','🥔','🥖','🍞','🥐','🥯',
+    '🥞','🧇','🍳','🥚','🧀','🥩','🍗','🥓','🌭','🍔',
+    '🍟','🍕','🌮','🍿','🍰','🍪','🍩','🍫','🍦','☕'
+  ];
+
+  /* ============================================================ */
+  /* === THEMES === Phase 3 selectable visual skins                */
+  /* Each theme provides its own emoji pool + a body-class hook    */
+  /* (see CSS) that swaps colors without touching component code.  */
+  /* When a theme has fewer emojis than a level's foodCount, the   */
+  /* engine wraps around (in initBoard) so every level still       */
+  /* fills cleanly — just with more repeats per emoji.             */
+  /* ============================================================ */
+  const THEMES = {
+    kitchen: {
+      key: 'kitchen', name: '美味厨房', icon: '🍳',
+      sub: '经典美食 · 暖橙色调',
+      foods: ALL_FOODS
+    },
+    dessert: {
+      key: 'dessert', name: '甜品咖啡', icon: '🍰',
+      sub: '甜蜜下午茶 · 粉紫色调',
+      foods: [
+        '🍰','🍪','🍩','🍫','🍦','🧁','🍮','🍡','🍯','🍬',
+        '🍭','🥧','🍨','☕','🍵','🍼','🥛','🥤','🍻','🍷',
+        '🍸','🍹','🍶','🥂','🥃','🍾','🍓','🍒','🍑','🥭',
+        '🥥','🍌','🍇','🍈','🍉','🍎','🥧','🍪','🍩','🍫',
+        '🍰','🧁','🍮','🍡','🍯','🍬','🍭','🍨','🥄','🍴'
+      ]
+    },
+    garden: {
+      key: 'garden', name: '森林花园', icon: '🌸',
+      sub: '自然清新 · 翠绿色调',
+      foods: [
+        '🌸','🌺','🌻','🌷','🌹','🍀','🌿','🌼','🌵','🌳',
+        '🌲','🌴','🌱','🌾','💐','🍂','🍁','🪷','🪻','🍃',
+        '🍄','🌰','🪴','☘️','🐝','🐞','🦋','🐛','🐌','🐢',
+        '🐦','🦜','🌝','🌞','⭐','🌟','✨','💫','☀️','🌈',
+        '🌤️','⛅','🌦️','🌧️','❄️','☃️','🪲','🪺','🪶','🍯'
+      ]
+    }
+  };
+  let currentTheme = THEMES.kitchen;
+
+  /* ============================================================ */
+  /* === THEME REMAP === Phase 6 theme-aware text overrides       */
+  /* Some strings are baked around the kitchen flavor ("Start     */
+  /* Cooking", "Chef's Skill", "8 DISHES"). When the player       */
+  /* switches to dessert or garden, those strings should retheme. */
+  /* tr() consults this dict first; if no entry, it falls back    */
+  /* to the base I18N dict. Kitchen has no overrides — it IS the  */
+  /* baseline. Strings without a theme entry stay generic.        */
+  /* Each value is { zh, en } so the same key works in both langs.*/
+  /* ============================================================ */
+  const THEME_REMAP = {
+    dessert: {
+      // Title / brand
+      '美味厨房连连看':         { zh: '美味甜品连连看',     en: 'Sweet Bakery Match' },
+      '八 道 美 味':            { zh: '八 道 甜 品',         en: '8 DESSERTS' },
+      '八 道 美 味 挑 战':       { zh: '八 道 甜 品 挑 战',   en: '8 Sweet Challenges' },
+      // Buttons
+      '▶ 开始烹饪':             { zh: '▶ 开始烘焙',          en: '▶ Start Baking' },
+      '🍳 开始游戏':            { zh: '🍰 开始游戏',         en: '🍰 Start' },
+      '🍳 开始正式游戏':         { zh: '🍰 开始正式游戏',      en: '🍰 Play the campaign' },
+      // Combo banners — flavor swap
+      '好吃!':                  { zh: '甜!',                 en: 'Sweet!' },
+      '美味!':                  { zh: '香甜!',               en: 'Sugary!' },
+      '香喷喷!':                { zh: '入口即化!',           en: 'Melts in your mouth!' },
+      '大厨手艺!':              { zh: '糕点师手艺!',         en: "Baker's Touch!" },
+      '米其林级!':              { zh: '米其林甜品!',         en: 'Patisserie Level!' },
+      '神级厨艺!':              { zh: '神级糕点!',           en: 'Heavenly Pastry!' },
+      '满汉全席!':              { zh: '甜品盛宴!',           en: 'Dessert Feast!' },
+      '传世佳肴!':              { zh: '传世佳点!',           en: 'Legendary Sweet!' },
+      // Final-win flavor
+      '🎊 <b>你真是位大厨！</b> 🎊': {
+        zh: '🎊 <b>你真是位糕点大师！</b> 🎊',
+        en: "🎊 <b>You're a true patissier!</b> 🎊"
+      },
+      // Default board message
+      '点击两个相同的食材即可消除': {
+        zh: '点击两个相同的甜品即可消除',
+        en: 'Click two matching desserts to remove them'
+      },
+      // Start screen body bullets
+      '点击两个<b>相同</b>的食材图案即可消除': {
+        zh: '点击两个<b>相同</b>的甜品即可消除',
+        en: 'Click two <b>matching</b> desserts to remove them'
+      },
+      '消除全部食材即可过关，进入下一道菜': {
+        zh: '消除全部甜品即可过关，进入下一道甜点',
+        en: 'Clear all desserts to advance to the next treat'
+      },
+      // Level names (campaign 1–8)
+      '新手厨房':  { zh: '新手甜品店',  en: 'Beginner Bakery' },
+      '食材加倍':  { zh: '甜品加倍',     en: 'Double Desserts' },
+      '反向上桌':  { zh: '倒置摆盘',     en: 'Inverted Plating' },
+      '辣椒厨房':  { zh: '急速烘焙',     en: 'Rapid Baking' },
+      '冰冻厨房':  { zh: '冰冻甜品店',   en: 'Frozen Bakery' },
+      '颠勺挑战':  { zh: '摇晃糖罐',     en: 'Sugar Shake' },
+      '盲厨挑战':  { zh: '盲品挑战',     en: 'Blind Tasting' },
+      '总厨大考':  { zh: '糕点大师考',   en: 'Master Patissier Exam' },
+      // Level hints
+      '基础玩法 · 食材向下落 · 慢慢来！': {
+        zh: '基础玩法 · 甜品向下落 · 慢慢来！',
+        en: 'Basics · Desserts fall ↓ · Take your time!'
+      },
+      '食材种类增多 · 配对更难找': {
+        zh: '甜品种类增多 · 配对更难找',
+        en: 'More dessert variety · pairs are harder to find'
+      },
+      '消除后食材向 ↑ 上飘 · 颠覆思路': {
+        zh: '消除后甜品向 ↑ 上飘 · 颠覆思路',
+        en: 'Desserts float ↑ after a match · flip your thinking'
+      },
+      '🌶️ 时间流逝 1.3 倍速 · 食材种类更多': {
+        zh: '🌶️ 时间流逝 1.3 倍速 · 甜品种类更多',
+        en: '🌶️ Timer runs at 1.3× speed · more dessert types'
+      },
+      '❄️ 18 个冰冻食材 · 相邻消除可解冻': {
+        zh: '❄️ 18 个冰冻甜品 · 相邻消除可解冻',
+        en: '❄️ 18 frozen desserts · adjacent matches thaw them'
+      },
+      '🌀 每 18 秒大厨颠勺 · 加上 20 个冰冻食材': {
+        zh: '🌀 每 18 秒糖罐摇晃 · 加上 20 个冰冻甜品',
+        en: '🌀 Auto-shuffle every 18s · plus 20 frozen desserts'
+      },
+      '👨‍🍳 路径只能转 1 弯 · 提示重排各 1 次': {
+        zh: '🧁 路径只能转 1 弯 · 提示重排各 1 次',
+        en: '🧁 Only 1 turn · 1 hint, 1 shuffle'
+      },
+      // Level twist labels (used in showLevelIntro)
+      '🌀 每 {n}s 自动颠勺': {
+        zh: '🌀 每 {n}s 自动摇罐',
+        en: '🌀 Auto-shuffle every {n}s'
+      },
+      '🌀 <b>每 {n} 秒大厨颠勺</b>，食材自动重排': {
+        zh: '🌀 <b>每 {n} 秒糖罐摇晃</b>，甜品自动重排',
+        en: '🌀 <b>Auto-shuffle every {n}s</b>'
+      },
+      '❄️ 冰冻食材 <b>{n}</b> 个（相邻消除可解冻）': {
+        zh: '❄️ 冰冻甜品 <b>{n}</b> 个（相邻消除可解冻）',
+        en: '❄️ <b>{n}</b> frozen desserts (adjacent matches thaw)'
+      },
+      '❄️ {n} 个冰冻食材': {
+        zh: '❄️ {n} 个冰冻甜品',
+        en: '❄️ {n} frozen desserts'
+      },
+      '🍱 {n} 种食材': {
+        zh: '🍱 {n} 种甜品',
+        en: '🍱 {n} dessert types'
+      },
+      '👨‍🍳 <b>没有提示和重排</b>，全靠厨艺！': {
+        zh: '🧁 <b>没有提示和重排</b>，全靠手艺！',
+        en: '🧁 <b>No hints or shuffles</b> — pure skill!'
+      },
+      '👨‍🍳 没有提示和重排': {
+        zh: '🧁 没有提示和重排',
+        en: '🧁 No hints/shuffles'
+      }
+    },
+    garden: {
+      // Title / brand
+      '美味厨房连连看':         { zh: '森林花园连连看',     en: 'Garden Match' },
+      '八 道 美 味':            { zh: '八 株 花 草',         en: '8 PLANTS' },
+      '八 道 美 味 挑 战':       { zh: '八 株 花 草 挑 战',   en: '8 Garden Challenges' },
+      // Buttons
+      '▶ 开始烹饪':             { zh: '▶ 开始种植',          en: '▶ Start Planting' },
+      '🍳 开始游戏':            { zh: '🌱 开始游戏',         en: '🌱 Start' },
+      '🍳 开始正式游戏':         { zh: '🌱 开始正式游戏',      en: '🌱 Tend the garden' },
+      // Combo banners — flavor swap
+      '好吃!':                  { zh: '茂盛!',               en: 'Lush!' },
+      '美味!':                  { zh: '繁花似锦!',           en: 'Blooming!' },
+      '香喷喷!':                { zh: '芳香四溢!',           en: 'Fragrant!' },
+      '大厨手艺!':              { zh: '园丁手艺!',           en: "Gardener's Hand!" },
+      '米其林级!':              { zh: '皇家园林!',           en: 'Royal Garden!' },
+      '神级厨艺!':              { zh: '神级园艺!',           en: 'Master Gardener!' },
+      '满汉全席!':              { zh: '百花齐放!',           en: 'Garden in Bloom!' },
+      '传世佳肴!':              { zh: '世外桃源!',           en: 'Legendary Garden!' },
+      // Final-win flavor
+      '🎊 <b>你真是位大厨！</b> 🎊': {
+        zh: '🎊 <b>你真是位园艺大师！</b> 🎊',
+        en: "🎊 <b>You're a master gardener!</b> 🎊"
+      },
+      // Default board message
+      '点击两个相同的食材即可消除': {
+        zh: '点击两个相同的植物即可消除',
+        en: 'Click two matching plants to remove them'
+      },
+      // Start screen body bullets
+      '点击两个<b>相同</b>的食材图案即可消除': {
+        zh: '点击两个<b>相同</b>的植物即可消除',
+        en: 'Click two <b>matching</b> plants to remove them'
+      },
+      '消除全部食材即可过关，进入下一道菜': {
+        zh: '消除全部植物即可过关，进入下一片花园',
+        en: 'Clear all plants to enter the next garden'
+      },
+      // Level names (campaign 1–8)
+      '新手厨房':  { zh: '新手花圃',  en: 'Beginner Plot' },
+      '食材加倍':  { zh: '植物加倍',   en: 'Double Plants' },
+      '反向上桌':  { zh: '倒长植物',   en: 'Upside-down Garden' },
+      '辣椒厨房':  { zh: '辣椒花园',   en: 'Chili Garden' },
+      '冰冻厨房':  { zh: '冰冻花园',   en: 'Frozen Garden' },
+      '颠勺挑战':  { zh: '翻土挑战',   en: 'Tilling Challenge' },
+      '盲厨挑战':  { zh: '盲园挑战',   en: 'Blind Gardening' },
+      '总厨大考':  { zh: '园艺大师考', en: 'Master Gardener Exam' },
+      // Level hints
+      '基础玩法 · 食材向下落 · 慢慢来！': {
+        zh: '基础玩法 · 植物向下落 · 慢慢来！',
+        en: 'Basics · Plants fall ↓ · Take your time!'
+      },
+      '食材种类增多 · 配对更难找': {
+        zh: '植物种类增多 · 配对更难找',
+        en: 'More plant variety · pairs are harder to find'
+      },
+      '消除后食材向 ↑ 上飘 · 颠覆思路': {
+        zh: '消除后植物向 ↑ 上长 · 颠覆思路',
+        en: 'Plants grow ↑ after a match · flip your thinking'
+      },
+      '🌶️ 时间流逝 1.3 倍速 · 食材种类更多': {
+        zh: '🌶️ 时间流逝 1.3 倍速 · 植物种类更多',
+        en: '🌶️ Timer runs at 1.3× speed · more plant types'
+      },
+      '❄️ 18 个冰冻食材 · 相邻消除可解冻': {
+        zh: '❄️ 18 株冰冻植物 · 相邻消除可解冻',
+        en: '❄️ 18 frozen plants · adjacent matches thaw them'
+      },
+      '🌀 每 18 秒大厨颠勺 · 加上 20 个冰冻食材': {
+        zh: '🌀 每 18 秒翻土一次 · 加上 20 株冰冻植物',
+        en: '🌀 Auto-till every 18s · plus 20 frozen plants'
+      },
+      '👨‍🍳 路径只能转 1 弯 · 提示重排各 1 次': {
+        zh: '🌿 路径只能转 1 弯 · 提示重排各 1 次',
+        en: '🌿 Only 1 turn · 1 hint, 1 shuffle'
+      },
+      // Level twist labels (used in showLevelIntro)
+      '🌀 每 {n}s 自动颠勺': {
+        zh: '🌀 每 {n}s 自动翻土',
+        en: '🌀 Auto-till every {n}s'
+      },
+      '🌀 <b>每 {n} 秒大厨颠勺</b>，食材自动重排': {
+        zh: '🌀 <b>每 {n} 秒翻土一次</b>，植物自动重排',
+        en: '🌀 <b>Auto-till every {n}s</b>'
+      },
+      '❄️ 冰冻食材 <b>{n}</b> 个（相邻消除可解冻）': {
+        zh: '❄️ 冰冻植物 <b>{n}</b> 株（相邻消除可解冻）',
+        en: '❄️ <b>{n}</b> frozen plants (adjacent matches thaw)'
+      },
+      '❄️ {n} 个冰冻食材': {
+        zh: '❄️ {n} 株冰冻植物',
+        en: '❄️ {n} frozen plants'
+      },
+      '🍱 {n} 种食材': {
+        zh: '🌿 {n} 种植物',
+        en: '🌿 {n} plant types'
+      },
+      '👨‍🍳 <b>没有提示和重排</b>，全靠厨艺！': {
+        zh: '🌿 <b>没有提示和重排</b>，全靠园艺！',
+        en: '🌿 <b>No hints or shuffles</b> — pure skill!'
+      },
+      '👨‍🍳 没有提示和重排': {
+        zh: '🌿 没有提示和重排',
+        en: '🌿 No hints/shuffles'
+      }
+    }
+  };
+
+  /* ============================================================ */
+  /* === POWERUPS === Phase 3 limited-use abilities                */
+  /* powerups   = remaining uses for this level (reset per level)  */
+  /* armedPowerUp = name of currently armed power-up, or null      */
+  /* Targeted power-ups (bomb/cross) wait for the next tile click; */
+  /* instant power-ups (time/superHint) fire immediately.          */
+  /* They bypass the path-check on purpose — that's their value —  */
+  /* but only ever match values in pairs so the board stays solid. */
+  /* ============================================================ */
+  let powerups = { bomb: 0, cross: 0, time: 0, superHint: 0 };
+  let armedPowerUp = null;
+
+  // Per-level power-up budget. Easier levels get a few extras for fun;
+  // the harder ones are intentionally tight.
+  function getPowerupBudget(idx) {
+    if (idx <= 1) return { bomb: 2, cross: 2, time: 2, superHint: 2 };
+    if (idx <= 4) return { bomb: 1, cross: 1, time: 1, superHint: 1 };
+    return                 { bomb: 1, cross: 1, time: 1, superHint: 1 };
+  }
+
+
+  // Every level is 10×10 (100 tiles, 50 pairs). Mechanics escalate by level.
+  // gravity:  'down'|'up'|'left'|'right'|'none'|'rotate'
+  // maxTurns: maximum corners allowed in the connecting path (default 2; hard levels = 1)
+  const LEVELS = [
+    // Levels are ordered so each one is strictly harder than the previous.
+    // Time budgets are intentionally fixed; difficulty grows via foods, aids, locks, gravity, maxTurns.
+    // Optional fields: timerSpeed (>1 = faster countdown), autoShuffle (sec between forced shuffles)
+    { name: '新手厨房',  cols: 10, rows: 10, foods: 14, time: 140, gravity: 'down',  hints: 4, shuffles: 3, locked: 0,  maxTurns: 2, hint: '基础玩法 · 食材向下落 · 慢慢来！' },
+    { name: '食材加倍',  cols: 10, rows: 10, foods: 22, time: 140, gravity: 'down',  hints: 3, shuffles: 2, locked: 0,  maxTurns: 2, hint: '食材种类增多 · 配对更难找' },
+    { name: '反向上桌',  cols: 10, rows: 10, foods: 28, time: 150, gravity: 'up',    hints: 3, shuffles: 2, locked: 0,  maxTurns: 2, hint: '消除后食材向 ↑ 上飘 · 颠覆思路' },
+    { name: '辣椒厨房',  cols: 10, rows: 10, foods: 32, time: 200, gravity: 'down',  hints: 2, shuffles: 2, locked: 0,  maxTurns: 2, timerSpeed: 1.3, hint: '🌶️ 时间流逝 1.3 倍速 · 食材种类更多' },
+    { name: '冰冻厨房',  cols: 10, rows: 10, foods: 36, time: 180, gravity: 'down',  hints: 2, shuffles: 2, locked: 18, maxTurns: 2, hint: '❄️ 18 个冰冻食材 · 相邻消除可解冻' },
+    { name: '颠勺挑战',  cols: 10, rows: 10, foods: 40, time: 180, gravity: 'down',  hints: 2, shuffles: 1, locked: 20, maxTurns: 2, autoShuffle: 18, hint: '🌀 每 18 秒大厨颠勺 · 加上 20 个冰冻食材' },
+    { name: '盲厨挑战',  cols: 10, rows: 10, foods: 44, time: 180, gravity: 'down',  hints: 1, shuffles: 1, locked: 22, maxTurns: 1, hint: '👨‍🍳 路径只能转 1 弯 · 提示重排各 1 次' },
+    { name: '总厨大考',  cols: 10, rows: 10, foods: 50, time: 260, gravity: 'rotate',hints: 1, shuffles: 1, locked: 22, maxTurns: 1, timerSpeed: 1.3, hint: '🏆 旋转重力 + 冰冻 + 加速 + 只能转 1 次弯' }
+  ];
+
+  const GRAVITY_LABEL = {
+    down:   '↓ 向下',
+    up:     '↑ 向上',
+    left:   '← 向左',
+    right:  '→ 向右',
+    none:   '◇ 无重力',
+    rotate: '↻ 旋转'
+  };
+  const ROTATE_SEQ = ['down','left','up','right'];
+
+  const COMBO_MESSAGES = [
+    '', '好吃!', '美味!', '香喷喷!', '连击!',
+    '大厨手艺!', '米其林级!', '神级厨艺!', '满汉全席!', '传世佳肴!'
+  ];
+  const COMBO_TIMEOUT = 3000;
+  const GAP = 4;
+  const TIME_BONUS = 2.5;             // seconds returned per matched pair
+
+  // dynamic per-level state
+  let COLS = 10;
+  let ROWS = 10;
+  let TILE_SIZE = 50;
+  let foodCount = 16;
+  let TIME_LIMIT = 120;
+  let HINTS_START = 2;
+  let SHUFFLES_START = 1;
+  let gravityMode = 'down';
+  let gravityCurrent = 'down';
+  let rotateIdx = 0;
+  let maxTurns = 2;
+  let timerSpeed = 1;
+  let autoShuffleSec = 0;
+  let autoShuffleInterval = null;
+
+  // game state
+  let grid = [];
+  let lockMap = [];
+  let firstSelected = null;
+  let timer = 0;
+  let timerInterval = null;
+  let pairsLeft = 0;
+  let score = 0;
+  let totalScore = 0;
+  let combo = 0;
+  let comboTimer = null;
+  let hintsLeft = 0;
+  let shufflesLeft = 0;
+  let gameOver = false;
+  let levelIdx = 0;
+  let levelComplete = false;
+  let paused = false;
+  // PROGRESS: 'campaign' = play through all 8 levels, 'single' = level select replay,
+  //           'endless' = procedurally-scaled rounds, 'daily' = seeded daily challenge
+  let gameMode = 'campaign';
+  let levelStartedAt = 0;
+  let pausedElapsedMs = 0;     // ms spent paused this level (subtracted from elapsed)
+  let pausedAt = 0;            // ms when current pause began
+  // Active level config — set per startLevel(). Lets endless / daily supply
+  // their own configs without forcing them into the LEVELS array.
+  let currentLevelCfg = null;
+  // Endless mode round counter + accumulated score
+  let endlessRound = 1;
+  let endlessScore = 0;
+
+  /* ============================================================ */
+  /* === ENDLESS === Phase 4 procedurally-scaled rounds            */
+  /* Difficulty grows with the round number. Round 1 mirrors the  */
+  /* easy intro; later rounds layer on more food types, less time, */
+  /* tighter path rules, gravity twists, and frozen tiles.         */
+  /* ============================================================ */
+  const ENDLESS_GRAVITY_CYCLE = ['down', 'down', 'down', 'up', 'left', 'right', 'rotate'];
+  function generateEndlessLevel(round) {
+    // Curves chosen so the player feels meaningful escalation each round
+    // without breaking solvability (foodCount is capped to theme size in initBoard).
+    const foods   = Math.min(50, 12 + Math.floor(round * 1.6));
+    const time    = Math.max(75, 130 - (round - 1) * 4);
+    const hints   = round <= 4 ? 2 : 1;
+    const shuffles= round <= 6 ? 1 : 0;
+    const locked  = round <= 3 ? 0
+                   : round <= 6 ? 8 + (round - 4) * 4
+                   : Math.min(28, 14 + (round - 6) * 2);
+    const maxTurns= round >= 8 ? 1 : 2;
+    const timerSpeed = round >= 10 ? 1 + (round - 10) * 0.05 : 1;
+    const gravity = ENDLESS_GRAVITY_CYCLE[Math.min(round - 1, ENDLESS_GRAVITY_CYCLE.length - 1)];
+    return {
+      // I18N: keep `name` and `hint` as templates with {n}; consumers translate
+      // via tr(cfg.hint, cfg.hintVars). Means changing language mid-run still works.
+      name: '第 {n} 轮',
+      cols: 10, rows: 10,
+      foods, time, gravity, hints, shuffles, locked, maxTurns, timerSpeed,
+      hint: '♾️ 无尽 · 第 {n} 轮挑战',
+      nameVars: { n: round },
+      hintVars: { n: round }
+    };
+  }
+
+  /* ============================================================ */
+  /* === DAILY === Phase 4 same-board-everyone challenge           */
+  /* The board layout for "today" is determined by today's date,   */
+  /* via the seeded RNG above. Difficulty is fixed and balanced.   */
+  /* ============================================================ */
+  const DAILY_CFG = {
+    name: '今日挑战',
+    cols: 10, rows: 10,
+    foods: 24, time: 180, gravity: 'down',
+    hints: 2, shuffles: 1, locked: 0,
+    maxTurns: 2, timerSpeed: 1,
+    hint: '📅 每日挑战 · 同样的棋盘 · 比拼分数'
+  };
+  function getTodayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' +
+           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0');
+  }
+  // Numeric seed derived from today's date — used to seed the RNG so the
+  // shuffled board is identical for everyone playing the same day.
+  function getDailySeed() {
+    const d = new Date();
+    return (d.getFullYear() * 10000) + ((d.getMonth() + 1) * 100) + d.getDate();
+  }
+
+
+  const boardEl       = document.getElementById('board');
+  const canvas        = document.getElementById('pathCanvas');
+  const ctx           = canvas.getContext('2d');
+  const timerEl       = document.getElementById('timer');
+  const timerWrap     = document.getElementById('timerWrap');
+  const pairsLeftEl   = document.getElementById('pairsLeft');
+  const scoreEl       = document.getElementById('score');
+  const totalScoreEl  = document.getElementById('totalScore');
+  const comboEl       = document.getElementById('combo');
+  const hintBtn       = document.getElementById('hintBtn');
+  const shuffleBtn    = document.getElementById('shuffleBtn');
+  const pauseBtn      = document.getElementById('pauseBtn');
+  const soundBtn      = document.getElementById('soundBtn');
+  const powerupBar    = document.getElementById('powerupBar');
+  const puButtons = {
+    bomb:      { btn: document.getElementById('puBombBtn'),  count: document.getElementById('puBombCount') },
+    cross:     { btn: document.getElementById('puCrossBtn'), count: document.getElementById('puCrossCount') },
+    time:      { btn: document.getElementById('puTimeBtn'),  count: document.getElementById('puTimeCount') },
+    superHint: { btn: document.getElementById('puHintBtn'),  count: document.getElementById('puHintCount') }
+  };
+  const menuBtn       = document.getElementById('menuBtn');
+  const pauseOverlay  = document.getElementById('pauseOverlay');
+  const messageEl     = document.getElementById('message');
+  const levelTag      = document.getElementById('levelTag');
+  const featureTag    = document.getElementById('featureTag');
+  const gravityTag    = document.getElementById('gravityTag');
+  const ruleTag       = document.getElementById('ruleTag');
+  const levelDotsEl   = document.getElementById('levelDots');
+  const startScreen   = document.getElementById('startScreen');
+  const startGameBtn  = document.getElementById('startGameBtn');
+  const transitionModal = document.getElementById('transitionModal');
+  const transitionCard  = document.getElementById('transitionCard');
+
+  function calcTileSize() {
+    // All levels are 10x10; pick the largest size that fits the viewport.
+    // MOBILE: separate desktop / tablet / phone bands so tiles never overflow
+    // on narrow screens, while still staying ≥40px (readable touch target).
+    const N = 10;
+    const w = window.innerWidth, h = window.innerHeight;
+    const isPhone  = w < 540;
+    const isMobile = w < 900;
+    const sidePad   = isPhone ? 20  : isMobile ? 28  : 48;
+    const reservedH = isPhone ? 230 : isMobile ? 280 : 380;
+    const wrapPad   = isPhone ? 16  : isMobile ? 20  : 32;
+    const maxW = Math.min(w - sidePad, 1300);
+    const maxH = Math.min(Math.max(240, h - reservedH), 1100);
+    const byW = (maxW - (N - 1) * GAP - wrapPad) / N;
+    const byH = (maxH - (N - 1) * GAP - wrapPad) / N;
+    const minSize = isPhone ? 28 : isMobile ? 44 : 72;
+    const maxSize = isPhone ? 56 : isMobile ? 80 : 110;
+    return Math.max(minSize, Math.min(maxSize, Math.floor(Math.min(byW, byH))));
+  }
+
+  function startLevel(idx, overrideCfg) {
+    levelIdx = idx;
+    const cfg = overrideCfg || LEVELS[idx];
+    currentLevelCfg = cfg;
+    COLS = cfg.cols;
+    ROWS = cfg.rows;
+    foodCount = cfg.foods;
+    TIME_LIMIT = cfg.time;
+    HINTS_START = cfg.hints;
+    SHUFFLES_START = cfg.shuffles;
+    gravityMode = cfg.gravity;
+    gravityCurrent = (gravityMode === 'rotate') ? ROTATE_SEQ[0] : gravityMode;
+    rotateIdx = 0;
+    maxTurns = cfg.maxTurns ?? 2;
+    timerSpeed = cfg.timerSpeed ?? 1;
+    autoShuffleSec = cfg.autoShuffle ?? 0;
+    if (autoShuffleInterval) { clearInterval(autoShuffleInterval); autoShuffleInterval = null; }
+    levelComplete = false;
+    paused = false;
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.classList.remove('active');
+    pauseBtn.textContent = tr('⏸️ 暂停');
+    initBoard(cfg);
+    if (autoShuffleSec > 0) {
+      autoShuffleInterval = setInterval(() => {
+        if (gameOver || levelComplete || paused) return;
+        doShuffle(true);
+        showToast(tr('🌀 大厨颠勺！食材重新摆放'));
+      }, autoShuffleSec * 1000);
+    }
+    // TUTORIAL: highlight a real valid pair for first-time level-1 players
+    maybeAutoHintForFirstLevel();
+    // CRAZYGAMES: tell the SDK gameplay has begun (used for analytics + ad gating).
+    CG.gameplayStart();
+  }
+
+  function initBoard(cfg) {
+    TILE_SIZE = calcTileSize();
+    const totalSlots = ROWS * COLS;
+    const pairCount = totalSlots / 2;
+    const pool = [];
+    // THEMES: cap unique-food count to whatever the active theme provides,
+    // so a theme with fewer than `foodCount` emojis still fills the board
+    // (with more repeats per emoji — slightly easier on that level).
+    const themeFoods = (currentTheme && currentTheme.foods) || ALL_FOODS;
+    const effectiveFoodCount = Math.min(foodCount, themeFoods.length);
+    for (let i = 0; i < pairCount; i++) {
+      const t = themeFoods[i % effectiveFoodCount];
+      pool.push(t, t);
+    }
+    shuffle(pool);
+
+    grid = [];
+    lockMap = [];
+    for (let r = 0; r < ROWS + 2; r++) {
+      grid.push(new Array(COLS + 2).fill(null));
+      lockMap.push(new Array(COLS + 2).fill(0));
+    }
+    let idx = 0;
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        grid[r][c] = pool[idx++];
+      }
+    }
+
+    if (cfg.locked > 0) {
+      const positions = [];
+      for (let r = 1; r <= ROWS; r++)
+        for (let c = 1; c <= COLS; c++)
+          positions.push({ r, c });
+      // Try multiple lock arrangements until at least one match is available
+      // among the unfrozen tiles, so the player can never start in a stuck state.
+      for (let attempt = 0; attempt < 60; attempt++) {
+        for (let r = 1; r <= ROWS; r++)
+          for (let c = 1; c <= COLS; c++)
+            lockMap[r][c] = 0;
+        shuffle(positions);
+        for (let i = 0; i < cfg.locked && i < positions.length; i++) {
+          lockMap[positions[i].r][positions[i].c] = 1;
+        }
+        if (hasAnyMove()) break;
+      }
+    }
+
+    pairsLeft = pairCount;
+    score = 0;
+    combo = 0;
+    timer = TIME_LIMIT;
+    hintsLeft = HINTS_START;
+    shufflesLeft = SHUFFLES_START;
+    firstSelected = null;
+    gameOver = false;
+    // PROGRESS: stamp wall-clock start for star rating
+    levelStartedAt = Date.now();
+    pausedElapsedMs = 0;
+    pausedAt = 0;
+    messageEl.textContent = tr(cfg.hint, cfg.hintVars);
+    messageEl.className = 'message';
+
+    if (!hasAnyMove()) doShuffle(true);
+    resetPowerupsForLevel(); // POWERUPS: refresh budget for the new level
+    updateHUD();
+    renderBoard();
+    startTimer();
+  }
+
+  /* === DAILY === Seeded RNG so the daily board is identical for everyone */
+  /* on a given day. Mulberry32 — small, ~good distribution, no deps.       */
+  let rng = Math.random;
+  function makeSeededRng(seed) {
+    let s = seed | 0;
+    return function () {
+      s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Wrap a chunk of work with a seeded rng, then restore the previous one.
+  function withSeededRng(seed, fn) {
+    const prev = rng;
+    rng = makeSeededRng(seed);
+    try { fn(); }
+    finally { rng = prev; }
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  /* ============================================================ */
+  /* === PERF === Phase 1 tile-element cache + targeted sync      */
+  /* renderBoard() rebuilds the whole DOM (used on level start    */
+  /* and resize); syncBoard() only diffs textContent + .empty /   */
+  /* .locked classes on cached elements. After-match updates use  */
+  /* syncBoard, avoiding 100 createElement calls every move.      */
+  /* getTileEl is now an O(1) lookup instead of querySelector.    */
+  /* ============================================================ */
+  let tileEls = [];          // tileEls[r][c] -> HTMLElement (1..ROWS / 1..COLS)
+  let boardBuiltDims = null; // remember last built dims so resize-only triggers a sync, not a rebuild
+
+  function renderBoard() {
+    const fontSize = Math.floor(TILE_SIZE * 0.65);
+    boardEl.style.gridTemplateColumns = `repeat(${COLS}, ${TILE_SIZE}px)`;
+    boardEl.style.gridTemplateRows    = `repeat(${ROWS}, ${TILE_SIZE}px)`;
+    boardEl.innerHTML = '';
+    tileEls = [];
+    for (let r = 0; r <= ROWS + 1; r++) tileEls.push(new Array(COLS + 2).fill(null));
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.width  = TILE_SIZE + 'px';
+        tile.style.height = TILE_SIZE + 'px';
+        tile.style.fontSize = fontSize + 'px';
+        tile.dataset.r = r;
+        tile.dataset.c = c;
+        // Closure captures r/c for the lifetime of the cached tile (we never
+        // rebuild this tile until the next renderBoard, so no stale handlers).
+        tile.addEventListener('click', () => onTileClick(r, c, tile));
+        boardEl.appendChild(tile);
+        tileEls[r][c] = tile;
+      }
+    }
+    syncBoard();
+    const w = COLS * TILE_SIZE + (COLS - 1) * GAP;
+    const h = ROWS * TILE_SIZE + (ROWS - 1) * GAP;
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.style.left   = '16px';
+    canvas.style.top    = '16px';
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    boardBuiltDims = { rows: ROWS, cols: COLS, size: TILE_SIZE };
+  }
+
+  // PERF: only update what changed. No DOM creation, no layout thrash.
+  function syncBoard() {
+    if (!tileEls.length) { renderBoard(); return; }
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        const tile = tileEls[r][c];
+        if (!tile) continue;
+        const v = grid[r][c];
+        const locked = v !== null && lockMap[r][c] > 0;
+        // Drop transient anim classes so cells repopulated by gravity are clickable again.
+        tile.classList.remove('matched', 'nopath', 'hint');
+        const desired = (v === null) ? '' : v;
+        if (tile.textContent !== desired) tile.textContent = desired;
+        const isEmpty = (v === null);
+        if (tile.classList.contains('empty')   !== isEmpty) tile.classList.toggle('empty',  isEmpty);
+        if (tile.classList.contains('locked')  !== locked)  tile.classList.toggle('locked', locked);
+      }
+    }
+  }
+
+  // PERF: O(1) lookup instead of querySelector round-trip.
+  function getTileEl(r, c) {
+    return (tileEls[r] && tileEls[r][c]) || null;
+  }
+
+  function onTileClick(r, c, el) {
+    if (gameOver || levelComplete || paused) return;
+    // POWERUPS: intercept clicks while a targeted power-up is armed.
+    if (armedPowerUp === 'bomb')  { applyBomb(r, c);  return; }
+    if (armedPowerUp === 'cross') { applyCross(r, c); return; }
+    if (grid[r][c] === null) return;
+    if (lockMap[r][c] > 0) {
+      flashLocked(el);
+      return;
+    }
+    if (firstSelected && firstSelected.r === r && firstSelected.c === c) {
+      el.classList.remove('selected');
+      firstSelected = null;
+      return;
+    }
+    if (!firstSelected) {
+      firstSelected = { r, c };
+      el.classList.add('selected');
+      return;
+    }
+    const a = firstSelected;
+    const b = { r, c };
+    const firstEl = getTileEl(a.r, a.c);
+    if (grid[a.r][a.c] !== grid[b.r][b.c]) {
+      if (firstEl) firstEl.classList.remove('selected');
+      firstSelected = b;
+      el.classList.add('selected');
+      breakCombo();
+      return;
+    }
+    const path = findPath(a, b);
+    if (path) {
+      drawPath(path);
+      firstEl.classList.add('matched');
+      el.classList.add('matched');
+      removeAt([{r: a.r, c: a.c}, {r: b.r, c: b.c}]);
+      pairsLeft -= 1;
+      decrementLockedAround(a.r, a.c);
+      decrementLockedAround(b.r, b.c);
+
+      combo++;
+      const points = 10 + (combo - 1) * 5;
+      score += points;
+
+      // AUDIO: match always plays; combo layered on top from chain ≥2
+      SFX.play('match');
+      if (combo >= 2) SFX.play('combo', combo);
+
+      // Time bonus: every match returns a fixed 2.5 seconds
+      timer += TIME_BONUS;
+      flashTimerBonus();
+
+      firstSelected = null;
+      showFloatingScore(el, points, TIME_BONUS);
+      spawnBurst(el);
+      spawnBurst(firstEl);
+      if (combo >= 2) showComboBanner(combo);
+      resetComboTimer();
+
+      setTimeout(() => {
+        clearPath();
+        if (gravityMode === 'rotate') {
+          rotateIdx = (rotateIdx + 1) % ROTATE_SEQ.length;
+          gravityCurrent = ROTATE_SEQ[rotateIdx];
+          updateGravityTag();
+        }
+        applyGravity(gravityCurrent);
+        syncBoard(); // PERF: cheap diff, no DOM rebuild
+        updateHUD();
+        if (pairsLeft === 0) {
+          completeLevel();
+        } else if (!hasAnyMove()) {
+          messageEl.textContent = tr('没有可消除的对了，自动重排中...');
+          setTimeout(() => doShuffle(true), 800);
+        }
+      }, 500);
+    } else {
+      flashNoPath(firstEl, el);
+      firstEl.classList.remove('selected');
+      firstSelected = null;
+      breakCombo();
+    }
+  }
+
+  function flashLocked(el) {
+    el.style.transition = 'transform 0.1s';
+    el.style.transform = 'translateX(-3px)';
+    setTimeout(() => { el.style.transform = 'translateX(3px)'; }, 80);
+    setTimeout(() => { el.style.transform = ''; }, 160);
+    SFX.play('invalid');
+  }
+
+  let noPathToastAt = 0;
+  function flashNoPath(elA, elB) {
+    SFX.play('invalid');
+    [elA, elB].forEach(el => {
+      if (!el) return;
+      el.classList.remove('nopath');
+      void el.offsetWidth;
+      el.classList.add('nopath');
+      setTimeout(() => el.classList.remove('nopath'), 600);
+    });
+    const now = Date.now();
+    if (now - noPathToastAt > 1400) {
+      noPathToastAt = now;
+      let msg;
+      if (maxTurns === 0) {
+        msg = tr('❌ 没有可用路径！本关只允许 直线 连接（中间不能有食材）');
+      } else if (maxTurns === 1) {
+        msg = tr('❌ 没有可用路径！本关路径最多只能转 1 次弯');
+      } else {
+        msg = tr('❌ 没有可用路径！路径最多 2 个转弯，且不能穿过其他食材');
+      }
+      showToast(msg);
+    }
+  }
+
+  function removeAt(list) {
+    let n = 0;
+    for (const p of list) {
+      if (grid[p.r][p.c] !== null) {
+        grid[p.r][p.c] = null;
+        n++;
+      }
+    }
+    return n;
+  }
+
+  function decrementLockedAround(r, c) {
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr < 1 || nr > ROWS || nc < 1 || nc > COLS) continue;
+        if (lockMap[nr][nc] > 0) lockMap[nr][nc]--;
+      }
+    }
+  }
+
+  function countTilesRemaining() {
+    let n = 0;
+    for (let r = 1; r <= ROWS; r++)
+      for (let c = 1; c <= COLS; c++)
+        if (grid[r][c] !== null) n++;
+    return n;
+  }
+
+  /* === POWERUPS === core handlers === */
+
+  // Reset budget at the start of each level + clear any armed state.
+  function resetPowerupsForLevel() {
+    // Endless / daily modes use a flat 1-each budget per round/attempt;
+    // campaign / single follow the per-level schedule in getPowerupBudget.
+    const budget = (gameMode === 'endless' || gameMode === 'daily')
+      ? { bomb: 1, cross: 1, time: 1, superHint: 1 }
+      : getPowerupBudget(levelIdx);
+    powerups = Object.assign({}, budget);
+    armedPowerUp = null;
+    refreshPowerupBar();
+    boardEl.classList.remove('armed-bomb', 'armed-cross');
+    Object.values(puButtons).forEach(p => p.btn.classList.remove('armed'));
+  }
+
+  function refreshPowerupBar() {
+    for (const k of Object.keys(puButtons)) {
+      const ref = puButtons[k];
+      const remaining = powerups[k] || 0;
+      ref.count.textContent = '×' + remaining;
+      ref.btn.disabled = remaining <= 0 || gameOver || levelComplete || paused;
+      // Drop armed state if this power-up just ran out.
+      if (remaining <= 0 && armedPowerUp === k) {
+        armedPowerUp = null;
+        ref.btn.classList.remove('armed');
+        boardEl.classList.remove('armed-bomb', 'armed-cross');
+      }
+    }
+  }
+
+  function disarmPowerUp() {
+    if (!armedPowerUp) return;
+    const ref = puButtons[armedPowerUp];
+    if (ref) ref.btn.classList.remove('armed');
+    armedPowerUp = null;
+    boardEl.classList.remove('armed-bomb', 'armed-cross');
+  }
+
+  // Click a power-up button: toggle armed state (for bomb/cross) or fire instantly.
+  function activatePowerUp(name) {
+    if (gameOver || levelComplete || paused) return;
+    if (!powerups[name] || powerups[name] <= 0) return;
+    if (name === 'time')      { applyExtraTime(); return; }
+    if (name === 'superHint') { applySuperHint(); return; }
+    // Targeting power-ups (bomb / cross) — toggle armed
+    if (armedPowerUp === name) { disarmPowerUp(); return; }
+    disarmPowerUp();
+    armedPowerUp = name;
+    puButtons[name].btn.classList.add('armed');
+    boardEl.classList.add(name === 'bomb' ? 'armed-bomb' : 'armed-cross');
+    // Drop any selected tile so the next click is unambiguously the target.
+    if (firstSelected) {
+      const e = getTileEl(firstSelected.r, firstSelected.c);
+      if (e) e.classList.remove('selected');
+      firstSelected = null;
+    }
+    showToast(tr(name === 'bomb'
+      ? '💣 已装填！点击棋盘上要清除的位置（3×3 范围）'
+      : '✨ 已装填！点击棋盘上要清除的位置（同行 + 同列）'));
+  }
+
+  // Group cells by emoji and pair them up. Unpaired singles stay on the board
+  // — that's what keeps the level solvable after a power-up.
+  function pairCellsByValue(cells) {
+    const by = {};
+    for (const cell of cells) {
+      if (!by[cell.v]) by[cell.v] = [];
+      by[cell.v].push(cell);
+    }
+    const matched = [];
+    for (const v of Object.keys(by)) {
+      const list = by[v];
+      while (list.length >= 2) { matched.push(list.pop(), list.pop()); }
+    }
+    return matched;
+  }
+
+  function applyBomb(r, c) {
+    const cells = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 1 || rr > ROWS || cc < 1 || cc > COLS) continue;
+        if (grid[rr][cc] === null) continue;
+        if (lockMap[rr][cc] > 0)   continue; // bomb can't break ice
+        cells.push({ r: rr, c: cc, v: grid[rr][cc] });
+      }
+    }
+    spawnShockwave(r, c);
+    return applyPowerUpClear(pairCellsByValue(cells), r, c, tr('💣 没有可配对的食材'));
+  }
+
+  function applyCross(r, c) {
+    const cells = [];
+    for (let cc = 1; cc <= COLS; cc++) {
+      if (grid[r][cc] === null) continue;
+      if (lockMap[r][cc] > 0)   continue;
+      cells.push({ r, c: cc, v: grid[r][cc] });
+    }
+    for (let rr = 1; rr <= ROWS; rr++) {
+      if (rr === r) continue; // already added center via row loop
+      if (grid[rr][c] === null) continue;
+      if (lockMap[rr][c] > 0)   continue;
+      cells.push({ r: rr, c, v: grid[rr][c] });
+    }
+    spawnCrossBeam(r, c);
+    return applyPowerUpClear(pairCellsByValue(cells), r, c, tr('✨ 同行同列没有可配对的食材'));
+  }
+
+  // Shared post-clear flow: animate, score, gravity, then check end-of-level.
+  function applyPowerUpClear(matched, originR, originC, emptyMessage) {
+    if (matched.length === 0) {
+      showToast(emptyMessage);
+      SFX.play('invalid');
+      return false;
+    }
+    // Pay for the power-up only on a successful trigger.
+    powerups[armedPowerUp]--;
+    disarmPowerUp();
+
+    for (const cell of matched) {
+      const el = getTileEl(cell.r, cell.c);
+      if (el) {
+        el.classList.add('matched');
+        spawnBurst(el);
+      }
+      grid[cell.r][cell.c] = null;
+      decrementLockedAround(cell.r, cell.c);
+    }
+
+    const pairs = matched.length / 2;
+    pairsLeft -= pairs;
+    combo += pairs;
+    const points = pairs * 15; // power-up bonus per pair
+    score += points;
+    timer += TIME_BONUS * pairs;
+    flashTimerBonus();
+
+    SFX.play('match');
+    if (combo >= 2) SFX.play('combo', combo);
+
+    const originEl = getTileEl(originR, originC) || getTileEl(matched[0].r, matched[0].c);
+    if (originEl) showFloatingScore(originEl, points, Math.round(TIME_BONUS * pairs * 10) / 10);
+    if (combo >= 2) showComboBanner(combo);
+    resetComboTimer();
+
+    setTimeout(() => {
+      // Mirror the regular-match flow so rotating gravity stays in sync.
+      if (gravityMode === 'rotate') {
+        rotateIdx = (rotateIdx + 1) % ROTATE_SEQ.length;
+        gravityCurrent = ROTATE_SEQ[rotateIdx];
+        updateGravityTag();
+      }
+      applyGravity(gravityCurrent);
+      syncBoard();
+      updateHUD();
+      refreshPowerupBar();
+      if (pairsLeft === 0) {
+        completeLevel();
+      } else if (!hasAnyMove()) {
+        messageEl.textContent = tr('没有可消除的对了，自动重排中...');
+        setTimeout(() => doShuffle(true), 800);
+      }
+    }, 500);
+    return true;
+  }
+
+  function applyExtraTime() {
+    powerups.time--;
+    timer += 30;
+    flashTimerBonus();
+    showToast(tr('⏱️ +30 秒！'));
+    SFX.play('match');
+    refreshPowerupBar();
+    updateHUD();
+  }
+
+  // Highlight up to 3 distinct valid pairs simultaneously (regular hint = 1).
+  function applySuperHint() {
+    const found = findMultipleMoves(3);
+    if (found.length === 0) {
+      showToast(tr('🔍 当前没有可消除的对'));
+      SFX.play('invalid');
+      return;
+    }
+    powerups.superHint--;
+    refreshPowerupBar();
+    for (const pair of found) {
+      const ea = getTileEl(pair[0].r, pair[0].c);
+      const eb = getTileEl(pair[1].r, pair[1].c);
+      if (ea) ea.classList.add('hint');
+      if (eb) eb.classList.add('hint');
+    }
+    SFX.play('combo', 2);
+    setTimeout(() => {
+      for (const pair of found) {
+        const ea = getTileEl(pair[0].r, pair[0].c);
+        const eb = getTileEl(pair[1].r, pair[1].c);
+        if (ea) ea.classList.remove('hint');
+        if (eb) eb.classList.remove('hint');
+      }
+    }, 1800);
+  }
+
+  // Find up to N distinct (no overlap) valid pairs across the board.
+  function findMultipleMoves(maxN) {
+    const byFood = {};
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        const t = grid[r][c];
+        if (t === null) continue;
+        if (lockMap[r][c] > 0) continue;
+        if (!byFood[t]) byFood[t] = [];
+        byFood[t].push({ r, c });
+      }
+    }
+    const used = new Set();
+    const found = [];
+    const key = p => p.r + ',' + p.c;
+    for (const v of Object.keys(byFood)) {
+      if (found.length >= maxN) break;
+      const list = byFood[v];
+      for (let i = 0; i < list.length && found.length < maxN; i++) {
+        if (used.has(key(list[i]))) continue;
+        for (let j = i + 1; j < list.length; j++) {
+          if (used.has(key(list[j]))) continue;
+          if (findPath(list[i], list[j])) {
+            found.push([list[i], list[j]]);
+            used.add(key(list[i]));
+            used.add(key(list[j]));
+            break;
+          }
+        }
+      }
+    }
+    return found;
+  }
+
+  // Visual: bomb shockwave centered on the targeted tile.
+  function spawnShockwave(r, c) {
+    const el = getTileEl(r, c);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const sw = document.createElement('div');
+    sw.className = 'powerup-shockwave';
+    const size = rect.width * 0.9;
+    sw.style.width = size + 'px';
+    sw.style.height = size + 'px';
+    sw.style.left = (rect.left + rect.width / 2 - size / 2) + 'px';
+    sw.style.top  = (rect.top  + rect.height / 2 - size / 2) + 'px';
+    document.body.appendChild(sw);
+    setTimeout(() => sw.remove(), 800);
+  }
+  // Visual: cross beam — two thin streaks across the row + column.
+  function spawnCrossBeam(r, c) {
+    const wrapper = boardEl.parentElement; // .board-wrapper
+    if (!wrapper) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const center = getTileEl(r, c);
+    const centerRect = center ? center.getBoundingClientRect() : null;
+    if (!centerRect) return;
+    const yMid = centerRect.top  + centerRect.height / 2 - wrapperRect.top;
+    const xMid = centerRect.left + centerRect.width  / 2 - wrapperRect.left;
+
+    const horiz = document.createElement('div');
+    horiz.className = 'powerup-beam';
+    horiz.style.left = '8px';
+    horiz.style.right = '8px';
+    horiz.style.top = (yMid - 6) + 'px';
+    horiz.style.height = '12px';
+    wrapper.appendChild(horiz);
+
+    const vert = document.createElement('div');
+    vert.className = 'powerup-beam';
+    vert.style.top = '8px';
+    vert.style.bottom = '8px';
+    vert.style.left = (xMid - 6) + 'px';
+    vert.style.width = '12px';
+    vert.style.background = 'linear-gradient(180deg, rgba(249,115,22,0) 0%, rgba(249,115,22,0.85) 45%, rgba(249,115,22,0.85) 55%, rgba(249,115,22,0) 100%)';
+    wrapper.appendChild(vert);
+
+    setTimeout(() => { horiz.remove(); vert.remove(); }, 700);
+  }
+
+  function applyGravity(dir) {
+    if (dir === 'none') return;
+    if (dir === 'down' || dir === 'up') {
+      for (let c = 1; c <= COLS; c++) {
+        const items = [];
+        for (let r = 1; r <= ROWS; r++) {
+          if (grid[r][c] !== null) {
+            items.push({ v: grid[r][c], lock: lockMap[r][c] });
+            grid[r][c] = null;
+            lockMap[r][c] = 0;
+          }
+        }
+        if (dir === 'down') {
+          for (let i = 0; i < items.length; i++) {
+            const r = ROWS - i;
+            const it = items[items.length - 1 - i];
+            grid[r][c] = it.v;
+            lockMap[r][c] = it.lock;
+          }
+        } else {
+          for (let i = 0; i < items.length; i++) {
+            const r = 1 + i;
+            const it = items[i];
+            grid[r][c] = it.v;
+            lockMap[r][c] = it.lock;
+          }
+        }
+      }
+    } else if (dir === 'left' || dir === 'right') {
+      for (let r = 1; r <= ROWS; r++) {
+        const items = [];
+        for (let c = 1; c <= COLS; c++) {
+          if (grid[r][c] !== null) {
+            items.push({ v: grid[r][c], lock: lockMap[r][c] });
+            grid[r][c] = null;
+            lockMap[r][c] = 0;
+          }
+        }
+        if (dir === 'left') {
+          for (let i = 0; i < items.length; i++) {
+            const c = 1 + i;
+            const it = items[i];
+            grid[r][c] = it.v;
+            lockMap[r][c] = it.lock;
+          }
+        } else {
+          for (let i = 0; i < items.length; i++) {
+            const c = COLS - i;
+            const it = items[items.length - 1 - i];
+            grid[r][c] = it.v;
+            lockMap[r][c] = it.lock;
+          }
+        }
+      }
+    }
+  }
+
+  function findPath(a, b) {
+    // 0-turn (straight line)
+    if (a.r === b.r && clearHoriz(a.r, a.c, b.c)) return [[a.r, a.c], [b.r, b.c]];
+    if (a.c === b.c && clearVert(a.c, a.r, b.r)) return [[a.r, a.c], [b.r, b.c]];
+    if (maxTurns < 1) return null;
+    // 1-turn (single corner)
+    if (grid[a.r][b.c] === null) {
+      if (clearHoriz(a.r, a.c, b.c) && clearVert(b.c, a.r, b.r)) {
+        return [[a.r, a.c], [a.r, b.c], [b.r, b.c]];
+      }
+    }
+    if (grid[b.r][a.c] === null) {
+      if (clearVert(a.c, a.r, b.r) && clearHoriz(b.r, a.c, b.c)) {
+        return [[a.r, a.c], [b.r, a.c], [b.r, b.c]];
+      }
+    }
+    if (maxTurns < 2) return null;
+    // 2-turn (two corners) — search for an intermediate row/column
+    for (let mid = 0; mid <= ROWS + 1; mid++) {
+      if (mid === a.r || mid === b.r) continue;
+      if (grid[mid][a.c] !== null) continue;
+      if (grid[mid][b.c] !== null) continue;
+      if (!clearVert(a.c, a.r, mid)) continue;
+      if (!clearVert(b.c, b.r, mid)) continue;
+      if (!clearHoriz(mid, a.c, b.c)) continue;
+      return [[a.r, a.c], [mid, a.c], [mid, b.c], [b.r, b.c]];
+    }
+    for (let mid = 0; mid <= COLS + 1; mid++) {
+      if (mid === a.c || mid === b.c) continue;
+      if (grid[a.r][mid] !== null) continue;
+      if (grid[b.r][mid] !== null) continue;
+      if (!clearHoriz(a.r, a.c, mid)) continue;
+      if (!clearHoriz(b.r, b.c, mid)) continue;
+      if (!clearVert(mid, a.r, b.r)) continue;
+      return [[a.r, a.c], [a.r, mid], [b.r, mid], [b.r, b.c]];
+    }
+    return null;
+  }
+
+  function clearHoriz(r, c1, c2) {
+    if (c1 === c2) return true;
+    const lo = Math.min(c1, c2), hi = Math.max(c1, c2);
+    for (let c = lo + 1; c < hi; c++) if (grid[r][c] !== null) return false;
+    return true;
+  }
+  function clearVert(c, r1, r2) {
+    if (r1 === r2) return true;
+    const lo = Math.min(r1, r2), hi = Math.max(r1, r2);
+    for (let r = lo + 1; r < hi; r++) if (grid[r][c] !== null) return false;
+    return true;
+  }
+
+  function gridToPx(r, c) {
+    const x = (c - 1) * (TILE_SIZE + GAP) + TILE_SIZE / 2;
+    const y = (r - 1) * (TILE_SIZE + GAP) + TILE_SIZE / 2;
+    return { x, y };
+  }
+
+  function drawPath(path) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grad.addColorStop(0,   '#f97316');
+    grad.addColorStop(0.5, '#ef4444');
+    grad.addColorStop(1,   '#facc15');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(249, 115, 22, 0.85)';
+    ctx.shadowBlur  = 14;
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      const [r, c] = path[i];
+      const { x, y } = gridToPx(r, c);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  function clearPath() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+  function hasAnyMove() { return findAnyMove() !== null; }
+  function findAnyMove() {
+    const byFood = {};
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        const t = grid[r][c];
+        if (t === null) continue;
+        if (lockMap[r][c] > 0) continue;
+        if (!byFood[t]) byFood[t] = [];
+        byFood[t].push({ r, c });
+      }
+    }
+    for (const t in byFood) {
+      const list = byFood[t];
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          if (findPath(list[i], list[j])) return [list[i], list[j]];
+        }
+      }
+    }
+    return null;
+  }
+
+  function doShuffle(free = false) {
+    if (gameOver || levelComplete) return;
+    if (!free && paused) return;
+    if (!free && shufflesLeft <= 0) return;
+    if (!free) shufflesLeft--;
+    const remaining = [], positions = [];
+    for (let r = 1; r <= ROWS; r++) {
+      for (let c = 1; c <= COLS; c++) {
+        if (grid[r][c] !== null) {
+          remaining.push(grid[r][c]);
+          positions.push({ r, c });
+        }
+      }
+    }
+    for (let attempt = 0; attempt < 30; attempt++) {
+      shuffle(remaining);
+      for (let i = 0; i < positions.length; i++) {
+        grid[positions[i].r][positions[i].c] = remaining[i];
+      }
+      if (hasAnyMove()) break;
+    }
+    if (!hasAnyMove()) {
+      for (let r = 1; r <= ROWS; r++)
+        for (let c = 1; c <= COLS; c++)
+          lockMap[r][c] = 0;
+    }
+    if (firstSelected) {
+      const e = getTileEl(firstSelected.r, firstSelected.c);
+      if (e) e.classList.remove('selected');
+      firstSelected = null;
+    }
+    breakCombo();
+    syncBoard(); // PERF: cheap diff, no DOM rebuild
+    updateHUD();
+  }
+
+  function setPaused(next) {
+    if (gameOver || levelComplete) return;
+    paused = next;
+    if (paused) {
+      pauseOverlay.classList.remove('hidden');
+      pauseBtn.classList.add('active');
+      pauseBtn.textContent = tr('▶️ 继续');
+      if (firstSelected) {
+        const e = getTileEl(firstSelected.r, firstSelected.c);
+        if (e) e.classList.remove('selected');
+        firstSelected = null;
+      }
+      timerWrap.classList.remove('warn');
+      // PROGRESS: don't count paused time toward star rating
+      pausedAt = Date.now();
+      disarmPowerUp(); // POWERUPS: don't keep a power-up armed while paused
+      CG.gameplayStop(); // CRAZYGAMES: notify the SDK that gameplay is paused
+    } else {
+      pauseOverlay.classList.add('hidden');
+      pauseBtn.classList.remove('active');
+      pauseBtn.textContent = tr('⏸️ 暂停');
+      if (pausedAt) {
+        pausedElapsedMs += Date.now() - pausedAt;
+        pausedAt = 0;
+      }
+      CG.gameplayStart(); // CRAZYGAMES: gameplay resuming
+    }
+    updateHUD();
+  }
+  function togglePause() { setPaused(!paused); }
+
+  function doHint() {
+    if (hintsLeft <= 0 || gameOver || levelComplete || paused) return;
+    const move = findAnyMove();
+    if (!move) return;
+    hintsLeft--;
+    updateHUD();
+    const [a, b] = move;
+    const ea = getTileEl(a.r, a.c);
+    const eb = getTileEl(b.r, b.c);
+    if (ea) ea.classList.add('hint');
+    if (eb) eb.classList.add('hint');
+    setTimeout(() => {
+      if (ea) ea.classList.remove('hint');
+      if (eb) eb.classList.remove('hint');
+    }, 1300);
+  }
+
+  let lastTickSecond = -1;
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    lastTickSecond = -1;
+    timerInterval = setInterval(() => {
+      if (gameOver || levelComplete || paused) return;
+      timer -= timerSpeed;
+      updateHUD();
+      if (timer <= 10) {
+        timerWrap.classList.add('warn');
+        // AUDIO: tick once per integer second below the threshold (timer>0)
+        const sec = Math.ceil(timer);
+        if (sec > 0 && sec !== lastTickSecond) {
+          lastTickSecond = sec;
+          SFX.play('tick');
+        }
+      } else {
+        timerWrap.classList.remove('warn');
+        lastTickSecond = -1;
+      }
+      if (timer <= 0) lose();
+    }, 1000);
+  }
+
+  function updateHUD() {
+    timerEl.textContent       = Math.max(0, Math.ceil(timer));
+    pairsLeftEl.textContent   = pairsLeft;
+    scoreEl.textContent       = score;
+    totalScoreEl.textContent  = totalScore + score;
+    comboEl.textContent       = combo;
+    hintBtn.textContent       = '💡 ' + tr('提示 · {n}', { n: hintsLeft });
+    shuffleBtn.textContent    = '🔀 ' + tr('重排 · {n}', { n: shufflesLeft });
+    hintBtn.disabled          = hintsLeft <= 0 || gameOver || levelComplete || paused;
+    shuffleBtn.disabled       = shufflesLeft <= 0 || gameOver || levelComplete || paused;
+    pauseBtn.disabled         = gameOver || levelComplete;
+    pauseBtn.textContent      = paused ? tr('▶️ 继续') : tr('⏸️ 暂停');
+
+    // Display the level tag based on the current mode — endless uses round number,
+    // daily uses a fixed label, campaign/single use the LEVELS array.
+    const cfg = currentLevelCfg || LEVELS[levelIdx];
+    if (gameMode === 'endless') {
+      levelTag.textContent = tr('♾️ 无尽模式 · 第 {n} 轮', { n: endlessRound });
+    } else if (gameMode === 'daily') {
+      levelTag.textContent = tr('📅 今日挑战 · {date}', { date: getTodayKey() });
+    } else {
+      levelTag.textContent = tr('第 {n} 关 / 共 {m} 关 · {name}',
+        { n: levelIdx + 1, m: LEVELS.length, name: tr(cfg.name, cfg.nameVars) });
+    }
+    featureTag.textContent    = tr(cfg.hint, cfg.hintVars);
+    updateGravityTag();
+    updateRuleTag();
+    renderLevelDots();
+    refreshPowerupBar(); // POWERUPS: keeps disabled state in sync with paused / game over
+  }
+
+  function updateRuleTag() {
+    if (!ruleTag) return;
+    if (maxTurns === 0) {
+      ruleTag.textContent = tr('📏 仅可直线');
+      ruleTag.classList.add('strict');
+    } else if (maxTurns === 1) {
+      ruleTag.textContent = tr('🔄 仅可转 1 弯');
+      ruleTag.classList.add('strict');
+    } else {
+      ruleTag.textContent = tr('🔄 可转 2 弯');
+      ruleTag.classList.remove('strict');
+    }
+  }
+
+  function updateGravityTag() {
+    if (gravityMode === 'rotate') {
+      // Strip the leading arrow + space, then translate the bare direction.
+      const dir = tr(GRAVITY_LABEL[gravityCurrent]).replace(/^\S+\s+/, '');
+      gravityTag.textContent = tr('↻ 旋转 · {dir}', { dir });
+    } else {
+      gravityTag.textContent = tr(GRAVITY_LABEL[gravityMode]);
+    }
+  }
+
+  function renderLevelDots() {
+    levelDotsEl.innerHTML = '';
+    // Endless / daily modes don't fit the 8-dot progress bar.
+    if (gameMode === 'endless' || gameMode === 'daily') {
+      levelDotsEl.style.display = 'none';
+      return;
+    }
+    levelDotsEl.style.display = '';
+    for (let i = 0; i < LEVELS.length; i++) {
+      const d = document.createElement('div');
+      d.className = 'level-dot';
+      if (i < levelIdx) d.classList.add('done');
+      else if (i === levelIdx) d.classList.add('current');
+      levelDotsEl.appendChild(d);
+    }
+  }
+
+  function showFloatingScore(el, points, timeBonus) {
+    const rect = el.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'floating-score';
+    let html = '+' + points;
+    if (timeBonus) html += `<span class="time">+${timeBonus}${tr('秒')}</span>`;
+    f.innerHTML = html;
+    f.style.left = (rect.left + rect.width / 2 - 24) + 'px';
+    f.style.top  = (rect.top) + 'px';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 1000);
+  }
+
+  const BURST_COLORS = ['#f97316', '#ef4444', '#facc15', '#fb923c', '#84cc16', '#fde047'];
+  function spawnBurst(el) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
+    // Expanding ring
+    const ring = document.createElement('div');
+    ring.className = 'ring-pulse';
+    ring.style.left = (cx - 6) + 'px';
+    ring.style.top  = (cy - 6) + 'px';
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 600);
+    // Particle burst
+    const count = 9;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'burst-particle';
+      const color = BURST_COLORS[i % BURST_COLORS.length];
+      p.style.color = color;
+      p.style.background = color;
+      p.style.left = (cx - 4) + 'px';
+      p.style.top  = (cy - 4) + 'px';
+      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const dist  = 32 + Math.random() * 26;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 700);
+    }
+  }
+
+  let timerBonusTimeout = null;
+  function flashTimerBonus() {
+    timerWrap.classList.add('bonus');
+    if (timerBonusTimeout) clearTimeout(timerBonusTimeout);
+    timerBonusTimeout = setTimeout(() => timerWrap.classList.remove('bonus'), 450);
+  }
+
+  function showComboBanner(n) {
+    const idx = Math.min(n - 1, COMBO_MESSAGES.length - 1);
+    const msg = COMBO_MESSAGES[idx];
+    if (!msg) return;
+    const b = document.createElement('div');
+    b.className = 'combo-banner';
+    b.textContent = `${tr(msg)} ×${n}`;
+    document.body.appendChild(b);
+    setTimeout(() => b.remove(), 800);
+  }
+
+  function resetComboTimer() {
+    if (comboTimer) clearTimeout(comboTimer);
+    comboTimer = setTimeout(breakCombo, COMBO_TIMEOUT);
+  }
+  function breakCombo() {
+    combo = 0;
+    if (comboTimer) clearTimeout(comboTimer);
+    updateHUD();
+  }
+
+  function launchConfetti(n = 80) {
+    const colors = ['#f97316', '#ef4444', '#facc15', '#84cc16', '#fb923c', '#fde047'];
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-20px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay = Math.random() * 0.5 + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }
+  }
+
+  function completeLevel() {
+    levelComplete = true;
+    clearInterval(timerInterval);
+    if (autoShuffleInterval) { clearInterval(autoShuffleInterval); autoShuffleInterval = null; }
+    const timeBonus = Math.round(timer * 5);
+    score += timeBonus;
+    if (gameMode === 'campaign') totalScore += score;
+    if (gameMode === 'endless')  { endlessScore += score; totalScore = endlessScore; }
+    updateHUD();
+    launchConfetti();
+    SFX.play('win');
+    // CRAZYGAMES: gameplay segment ends. Trigger happytime (confetti on the
+    // host page) + stop the gameplay metric.
+    CG.happytime();
+    CG.gameplayStop();
+
+    /* === ENDLESS === continuous flow: short celebration, next round, repeat. */
+    if (gameMode === 'endless') {
+      const completedRound = endlessRound;
+      messageEl.textContent = tr('第 {n} 轮通关！+{s} · 累计 {t}',
+        { n: completedRound, s: score, t: endlessScore });
+      messageEl.className = 'message win';
+      flashEndlessRoundComplete(completedRound, score);
+      endlessRound += 1;
+      // CRAZYGAMES: midgame ad every other round (skips the very first transition).
+      const showAd = (endlessRound > 1) && ((endlessRound - 1) % 2 === 0);
+      const startNext = () => startLevel(0, generateEndlessLevel(endlessRound));
+      if (showAd) {
+        setTimeout(() => CG.requestAd('midgame', startNext), 1000);
+      } else {
+        setTimeout(startNext, 1200);
+      }
+      return;
+    }
+
+    /* === DAILY === single-shot completion modal. */
+    if (gameMode === 'daily') {
+      const finalScore = score;
+      messageEl.textContent = tr('今日挑战通关！得 {s} 分', { s: finalScore });
+      messageEl.className = 'message win';
+      setTimeout(() => showDailyComplete(finalScore), 900);
+      return;
+    }
+
+    // PROGRESS: compute stars from wall-clock elapsed (excluding paused time),
+    // then persist the best-of-runs result for this level.
+    const elapsedMs = (Date.now() - levelStartedAt) - pausedElapsedMs;
+    const stars = calcStars(elapsedMs / 1000, TIME_LIMIT);
+    Storage.saveLevelResult(levelIdx, stars, score);
+
+    const prev = {
+      idx: levelIdx,
+      score: score,
+      timeBonus: timeBonus,
+      total: totalScore,
+      stars: stars
+    };
+
+    // PROGRESS: single-level mode (came from level select) returns to that
+    // screen; campaign mode keeps progressing through all 8 levels.
+    if (gameMode === 'single') {
+      const stars3 = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+      messageEl.textContent = tr('本关通关！得 {s} 分 · {stars}', { s: score, stars: stars3 });
+      messageEl.className = 'message win';
+      setTimeout(() => showSingleLevelComplete(prev), 900);
+      return;
+    }
+
+    if (levelIdx + 1 >= LEVELS.length) {
+      gameOver = true;
+      launchConfetti(200);
+      Storage.saveBestTotal(totalScore);
+      messageEl.textContent = tr('🏆 全部 {n} 关通关！总分 {s}',
+        { n: LEVELS.length, s: totalScore });
+      messageEl.className = 'message final';
+      setTimeout(() => showFinalWinModal(), 900);
+    } else {
+      const stars3 = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+      messageEl.textContent = tr('本关通关！得 {s} 分（含时间奖励 {b}）· {stars}',
+        { s: score, b: timeBonus, stars: stars3 });
+      messageEl.className = 'message win';
+      // CRAZYGAMES: midgame ad before levels 3, 5, 7 (every other transition).
+      // levelIdx is the just-completed level (0-indexed): show after 1, 3, 5.
+      const showAd = (levelIdx % 2 === 1);
+      const openIntro = () => showLevelIntro(levelIdx + 1, prev);
+      if (showAd) {
+        setTimeout(() => CG.requestAd('midgame', openIntro), 900);
+      } else {
+        setTimeout(openIntro, 900);
+      }
+    }
+  }
+
+  function lose() {
+    gameOver = true;
+    clearInterval(timerInterval);
+    if (autoShuffleInterval) { clearInterval(autoShuffleInterval); autoShuffleInterval = null; }
+    SFX.play('lose');
+    CG.gameplayStop(); // CRAZYGAMES: timer ran out — end the gameplay segment
+
+    /* === ENDLESS === timer ran out → final game-over with run summary. */
+    if (gameMode === 'endless') {
+      endlessScore += score;
+      messageEl.textContent = tr('⏰ 时间到！第 {n} 轮 · 总分 {s}',
+        { n: endlessRound, s: endlessScore });
+      messageEl.className = 'message lose';
+      setTimeout(() => showEndlessGameOver(endlessRound, endlessScore), 500);
+      return;
+    }
+
+    /* === DAILY === record attempt (incomplete) and show daily lose modal. */
+    if (gameMode === 'daily') {
+      Storage.recordDailyAttempt(getTodayKey(), score, false);
+      messageEl.textContent = tr('⏰ 时间到！本次得分 {s}', { s: score });
+      messageEl.className = 'message lose';
+      setTimeout(() => showLoseModal(), 500);
+      return;
+    }
+
+    messageEl.textContent = tr('⏰ 时间到！本关 {s} 分 · 总分 {t}',
+      { s: score, t: totalScore + score });
+    messageEl.className = 'message lose';
+    setTimeout(() => showLoseModal(), 500);
+  }
+
+  // ============= Modal flow =============
+  function showToast(text) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2100);
+  }
+
+  function showModal(html) {
+    transitionCard.innerHTML = html;
+    transitionModal.classList.remove('hidden');
+  }
+
+  function hideModal() {
+    transitionModal.classList.add('hidden');
+    transitionCard.innerHTML = '';
+    lastModalRender = null; // I18N: stop tracking — nothing to re-render
+  }
+
+  function showStartScreen() {
+    document.body.classList.add('in-menu');
+    startScreen.classList.remove('hidden');
+    hideModal();
+    gameOver = true;
+    levelComplete = false;
+    gameMode = 'campaign'; // PROGRESS: clear single-level mode when leaving the board
+    if (timerInterval) clearInterval(timerInterval);
+    if (autoShuffleInterval) { clearInterval(autoShuffleInterval); autoShuffleInterval = null; }
+    if (firstSelected) firstSelected = null;
+    CG.gameplayStop(); // CRAZYGAMES: returning to menu — gameplay paused
+  }
+
+  function hideStartScreen() {
+    document.body.classList.remove('in-menu');
+    startScreen.classList.add('hidden');
+  }
+
+  function returnToMenu() {
+    if (!confirm(tr('回到主菜单？当前进度将会重置。'))) return;
+    totalScore = 0;
+    score = 0;
+    showStartScreen();
+  }
+
+  /* ============================================================ */
+  /* === TUTORIAL === Phase 2 first-play slideshow                */
+  /* Three-slide explainer that fires once, before the player's   */
+  /* first level. Each slide has a back/next/skip control.        */
+  /* On level 1's first play, we also auto-trigger a hint so a    */
+  /* valid pair gets visually highlighted right on the board.     */
+  /* ============================================================ */
+  const TUTORIAL_SLIDES = [
+    {
+      icon: '🎯',
+      title: '欢迎来到美味厨房！',
+      body: '点击两个 <b>相同</b> 的食材即可消除。<br>消除全部食材就能过关！'
+    },
+    {
+      icon: '🔄',
+      title: '路径规则',
+      body: '连接两块食材的路径 <b>最多两个转弯</b>，且不能穿过其他食材。<br>路径可以从棋盘外边缘绕过哦！'
+    },
+    {
+      icon: '✨',
+      title: '每关都有新机制',
+      body: '↓ <b>重力</b>：消除后食材会按方向滑动<br>' +
+            '❄️ <b>冰冻食材</b>：相邻消除可以解冻<br>' +
+            '⏰ <b>限时挑战</b>：时间用完即失败<br>' +
+            '💡 <b>提示</b> 与 🔀 <b>重排</b> 按钮可以救场'
+    }
+  ];
+
+  function runFirstPlayTutorialThen(after) {
+    if (Storage.isTutorialDone()) { after && after(); return; }
+    let idx = 0;
+    function render() {
+      lastModalRender = render; // I18N: re-render on language change
+      const s = TUTORIAL_SLIDES[idx];
+      const isFirst = idx === 0;
+      const isLast  = idx === TUTORIAL_SLIDES.length - 1;
+      const dots = TUTORIAL_SLIDES
+        .map((_, i) => `<span class="tut-dot ${i === idx ? 'active' : ''}"></span>`).join('');
+      const html = `
+        <div class="icon-row" style="font-size: 64px;">${s.icon}</div>
+        <h2>${tr(s.title)}</h2>
+        <div class="tut-dots">${dots}</div>
+        <div class="body" style="text-align: center; font-size: 17px; line-height: 1.85;">${tr(s.body)}</div>
+        <div class="modal-buttons">
+          ${!isFirst ? `<button class="secondary-btn" id="tutPrevBtn">${tr('← 上一步')}</button>` : ''}
+          <button class="primary-btn" id="tutNextBtn">${isLast ? tr('🍳 开始游戏') : tr('下一步 →')}</button>
+          <button class="secondary-btn" id="tutSkipBtn">${tr('跳过')}</button>
+        </div>
+      `;
+      showModal(html);
+      document.getElementById('tutNextBtn').onclick = () => {
+        if (isLast) finish();
+        else { idx++; render(); }
+      };
+      if (!isFirst) {
+        document.getElementById('tutPrevBtn').onclick = () => { idx--; render(); };
+      }
+      document.getElementById('tutSkipBtn').onclick = finish;
+    }
+    function finish() {
+      Storage.setTutorialDone();
+      hideModal();
+      after && after();
+    }
+    render();
+  }
+
+  // TUTORIAL: on a fresh save, after level 1 actually starts, auto-fire one
+  // hint so the player sees a valid pair lit up on the real board.
+  function maybeAutoHintForFirstLevel() {
+    if (Storage.isTutorialDone()) return; // never re-trigger
+    if (gameMode !== 'campaign' || levelIdx !== 0) return;
+    setTimeout(() => {
+      if (gameOver || levelComplete || paused) return;
+      if (firstSelected) return;             // user already engaged
+      if (hintsLeft <= 0) return;
+      doHint();
+      showToast(tr('💡 试试连接这两块食材！'));
+    }, 4000);
+  }
+
+  function gravityDescription(cfg) {
+    const map = {
+      down: '消除后向 ↓ 下方掉落',
+      up:   '消除后向 ↑ 上方掉落',
+      left: '消除后向 ← 左侧滑动',
+      right:'消除后向 → 右侧滑动',
+      none: '无重力，方块原地不动',
+      rotate:'重力方向每次消除后轮换（↓ ↦ ← ↦ ↑ ↦ →）'
+    };
+    return tr(map[cfg.gravity] || '');
+  }
+
+  function levelTwist(cfg) {
+    if (cfg.gravity === 'rotate') return tr('↻ 旋转重力');
+    if (cfg.timerSpeed && cfg.timerSpeed > 1) return tr('🌶️ 时间 {x}× 加速', { x: cfg.timerSpeed });
+    if (cfg.autoShuffle) return tr('🌀 每 {n}s 自动颠勺', { n: cfg.autoShuffle });
+    if (cfg.hints === 0 && cfg.shuffles === 0) return tr('👨‍🍳 没有提示和重排');
+    if (cfg.locked >= 20) return tr('❄️ {n} 个冰冻食材', { n: cfg.locked });
+    if (cfg.maxTurns === 0) return tr('📏 仅限直线路径');
+    if (cfg.maxTurns === 1) return tr('⚠️ 路径限 1 弯');
+    if (cfg.gravity === 'up')    return tr('↑ 反向重力');
+    if (cfg.gravity === 'left')  return tr('← 向左滑动');
+    if (cfg.gravity === 'right') return tr('→ 向右滑动');
+    if (cfg.gravity === 'none')  return tr('◇ 无重力');
+    if (cfg.foods >= 32)         return tr('🍱 {n} 种食材', { n: cfg.foods });
+    return tr('🍳 经典模式');
+  }
+
+  function levelDescription(cfg) {
+    const lines = [];
+    lines.push(tr('<b>限时 {t} 秒</b> · 提示 {h} 次 · 重排 {s} 次',
+      { t: cfg.time, h: cfg.hints, s: cfg.shuffles }));
+    lines.push(tr('重力：') + gravityDescription(cfg));
+    if (cfg.timerSpeed && cfg.timerSpeed > 1)
+      lines.push(tr('🌶️ <b>时间流逝 {x}× 加速</b>，必须手快！', { x: cfg.timerSpeed }));
+    if (cfg.autoShuffle)
+      lines.push(tr('🌀 <b>每 {n} 秒大厨颠勺</b>，食材自动重排', { n: cfg.autoShuffle }));
+    if (cfg.locked)
+      lines.push(tr('❄️ 冰冻食材 <b>{n}</b> 个（相邻消除可解冻）', { n: cfg.locked }));
+    if (cfg.maxTurns === 0)        lines.push(tr('📏 路径必须为<b>直线</b>（不能转弯）'));
+    else if (cfg.maxTurns === 1)   lines.push(tr('⚠️ 路径只能转 <b>1</b> 次弯'));
+    if (cfg.hints === 0 && cfg.shuffles === 0)
+      lines.push(tr('👨‍🍳 <b>没有提示和重排</b>，全靠厨艺！'));
+    return lines.join('<br>');
+  }
+
+  // PROGRESS: render the 1–3 star ribbon used in level cards / result modals.
+  function starString(n) {
+    n = Math.max(0, Math.min(3, n || 0));
+    return '★'.repeat(n) + '☆'.repeat(3 - n);
+  }
+
+  /* === THEMES === apply + picker modal === */
+  // Body class swaps every CSS variable below the cascade, so all visuals
+  // (HUD, modals, particles, etc.) re-skin without per-component changes.
+  // THEME REMAP also retitles flavor strings — refresh anything currently visible.
+  function applyTheme(key) {
+    const theme = THEMES[key] || THEMES.kitchen;
+    currentTheme = theme;
+    document.body.classList.remove('theme-kitchen', 'theme-dessert', 'theme-garden');
+    document.body.classList.add('theme-' + theme.key);
+    // Re-translate static UI (title, badge, start button, legend) so theme
+    // overrides take effect immediately; guard for initial-load ordering.
+    if (typeof applyStaticI18n === 'function') {
+      try { applyStaticI18n(); } catch (e) {}
+    }
+    if (typeof updateHUD === 'function' && typeof tileEls !== 'undefined' && tileEls && tileEls.length) {
+      try { updateHUD(); } catch (e) {}
+    }
+    // If a modal is currently open, re-render so its strings retheme too.
+    if (typeof lastModalRender === 'function' &&
+        typeof transitionModal !== 'undefined' && transitionModal &&
+        !transitionModal.classList.contains('hidden')) {
+      try { lastModalRender(); } catch (e) {}
+    }
+  }
+
+  function showThemePicker() {
+    lastModalRender = showThemePicker; // I18N: re-render on language change
+    const fromMenu = document.body.classList.contains('in-menu');
+    if (fromMenu) startScreen.classList.add('hidden');
+    const cur = currentTheme.key;
+    const cards = Object.values(THEMES).map(theme => {
+      // 4-emoji preview pulled from the theme's actual food list.
+      const sample = theme.foods.slice(0, 4).join(' ');
+      const swatches = ({
+        kitchen: ['#f97316','#ef4444','#facc15'],
+        dessert: ['#ec4899','#a855f7','#fbcfe8'],
+        garden:  ['#16a34a','#65a30d','#bbf7d0']
+      })[theme.key] || ['#999','#999','#999'];
+      return `
+        <div class="theme-card ${theme.key === cur ? 'selected' : ''}" data-key="${theme.key}" tabindex="0" role="button">
+          <div class="tc-icon">${theme.icon}</div>
+          <div class="tc-name">${tr(theme.name)}</div>
+          <div class="tc-sub">${tr(theme.sub)}</div>
+          <div style="font-size: 24px; letter-spacing: 4px; margin-top: 8px;">${sample}</div>
+          <div class="tc-swatches">
+            ${swatches.map(c => `<span class="tc-swatch" style="background:${c}"></span>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+    const html = `
+      <div class="icon-row">🎨</div>
+      <h2>${tr('选择主题')}</h2>
+      <div class="subtitle">${tr('换个心情玩一玩 · 偏好会自动保存')}</div>
+      <div class="theme-grid">${cards}</div>
+      <div class="modal-buttons">
+        <button class="secondary-btn" id="themeBackBtn">${tr('← 返回')}</button>
+      </div>
+    `;
+    showModal(html);
+    transitionCard.querySelectorAll('.theme-card').forEach(card => {
+      const pick = () => {
+        const key = card.dataset.key;
+        applyTheme(key);
+        Storage.setTheme(key);
+        // Reflect selection without rebuilding the modal — cheap & smooth.
+        transitionCard.querySelectorAll('.theme-card').forEach(c =>
+          c.classList.toggle('selected', c.dataset.key === key));
+        SFX.play('match');
+      };
+      card.addEventListener('click', pick);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+    });
+    document.getElementById('themeBackBtn').onclick = () => {
+      hideModal();
+      if (fromMenu) showStartScreen();
+    };
+  }
+
+  function showLevelSelect() {
+    lastModalRender = showLevelSelect; // I18N: re-render on language change
+    document.body.classList.add('in-menu');
+    startScreen.classList.add('hidden');
+    // Keep timers paused — we're back in menu space.
+    if (timerInterval) clearInterval(timerInterval);
+    if (autoShuffleInterval) { clearInterval(autoShuffleInterval); autoShuffleInterval = null; }
+    gameOver = true;
+
+    let totalStars = 0;
+    const cards = LEVELS.map((cfg, idx) => {
+      const data = Storage.getLevelData(idx);
+      const unlocked = Storage.isLevelUnlocked(idx);
+      totalStars += data.stars || 0;
+      if (!unlocked) {
+        return `
+          <div class="level-card locked" data-idx="${idx}" aria-disabled="true">
+            <div class="level-card-num">${idx + 1}</div>
+            <div class="level-card-lock">🔒</div>
+            <div class="level-card-name">${tr('未解锁')}</div>
+            <div class="level-card-best">${tr('通过上一关解锁')}</div>
+          </div>`;
+      }
+      const earned = data.stars > 0 ? 'earned' : '';
+      const best = data.bestScore > 0 ? tr('最佳 {s}', { s: data.bestScore }) : tr('未挑战');
+      return `
+        <div class="level-card" data-idx="${idx}" tabindex="0" role="button">
+          <div class="level-card-num">${idx + 1}</div>
+          <div class="level-card-stars ${earned}">${starString(data.stars)}</div>
+          <div class="level-card-name">${tr(cfg.name)}</div>
+          <div class="level-card-best">${best}</div>
+        </div>`;
+    }).join('');
+
+    const bestTotal = Storage.getBestTotal();
+    const html = `
+      <div class="icon-row">🎯</div>
+      <h2>${tr('选择关卡')}</h2>
+      <div class="level-select-summary">
+        ${tr('⭐ 已获得 <b>{got}</b> / {total} 颗星', { got: totalStars, total: LEVELS.length * 3 })}
+        ${bestTotal > 0 ? tr(' · 🏆 最高总分 <b>{s}</b>', { s: bestTotal }) : ''}
+      </div>
+      <div class="level-grid">${cards}</div>
+      <div class="modal-buttons">
+        <button class="secondary-btn" id="lsBackBtn">${tr('← 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+
+    transitionCard.querySelectorAll('.level-card:not(.locked)').forEach(card => {
+      const open = () => {
+        const idx = parseInt(card.dataset.idx, 10);
+        if (!Storage.isLevelUnlocked(idx)) return;
+        hideModal();
+        gameMode = 'single';
+        document.body.classList.remove('in-menu');
+        startScreen.classList.add('hidden');
+        showLevelIntro(idx, null);
+      };
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+    document.getElementById('lsBackBtn').onclick = () => {
+      hideModal();
+      showStartScreen();
+    };
+  }
+
+  function showSingleLevelComplete(prev) {
+    lastModalRender = () => showSingleLevelComplete(prev); // I18N
+    const cfg = LEVELS[prev.idx];
+    const best = Storage.getLevelData(prev.idx);
+    const isNewBest = prev.score >= best.bestScore && prev.score > 0;
+    const nextIdx = prev.idx + 1 < LEVELS.length ? prev.idx + 1 : -1;
+    const nextUnlocked = nextIdx >= 0 && Storage.isLevelUnlocked(nextIdx);
+    const html = `
+      <div class="icon-row">🎉</div>
+      <h2>${tr('第 {n} 关 通关！', { n: prev.idx + 1 })}</h2>
+      <div class="subtitle">${tr(cfg.name)}</div>
+      <div class="level-result-stars">${starString(prev.stars)}</div>
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${isNewBest ? tr('🆕 最高得分') : tr('本次得分')}</div>
+          <div class="val">${prev.score}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('最佳记录')}</div>
+          <div class="val">${best.bestScore}</div>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        ${nextUnlocked ? `<button class="primary-btn" id="modalActionBtn">${tr('下一关 →')}</button>` : ''}
+        <button class="${nextUnlocked ? 'secondary-btn' : 'primary-btn'}" id="modalReplayBtn">${tr('🔄 再玩一次')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('🎯 选关')}</button>
+      </div>
+    `;
+    showModal(html);
+    if (nextUnlocked) {
+      document.getElementById('modalActionBtn').onclick = () => {
+        hideModal();
+        showLevelIntro(nextIdx, null);
+      };
+    }
+    document.getElementById('modalReplayBtn').onclick = () => {
+      hideModal();
+      showLevelIntro(prev.idx, null);
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      showLevelSelect();
+    };
+  }
+
+  /* === ENDLESS === modals === */
+  function showEndlessIntro() {
+    lastModalRender = showEndlessIntro; // I18N
+    const best = Storage.getEndlessBest();
+    const html = `
+      <div class="icon-row">♾️</div>
+      <h2>${tr('无尽模式')}</h2>
+      <div class="subtitle">${tr('每轮都比上一轮更难 · 直到时间耗尽')}</div>
+      <div class="body" style="font-size: 16px;">
+        <p>${tr('🍳 通关一轮立即进入下一轮，<b>分数累计</b>')}</p>
+        <p>${tr('📈 每轮难度递增：食材种类增加、时间缩短、规则更严')}</p>
+        <p>${tr('⚠️ 时间耗尽即结束 · 看你能撑到第几轮！')}</p>
+      </div>
+      ${best.round > 0 ? `
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('最远关卡')}</div>
+          <div class="val">${tr('第 {n} 轮', { n: best.round })}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('最高得分')}</div>
+          <div class="val">${best.score}</div>
+        </div>
+      </div>` : ''}
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${tr('▶ 开始挑战')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('← 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      gameMode = 'endless';
+      endlessRound = 1;
+      endlessScore = 0;
+      score = 0;
+      totalScore = 0;
+      document.body.classList.remove('in-menu');
+      startScreen.classList.add('hidden');
+      startLevel(0, generateEndlessLevel(1));
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      showStartScreen();
+    };
+  }
+
+  // Brief celebration between endless rounds (no full modal interruption)
+  function flashEndlessRoundComplete(round, points, nextCfg) {
+    const banner = document.createElement('div');
+    banner.className = 'combo-banner';
+    banner.style.fontSize = '40px';
+    banner.textContent = tr('第 {n} 轮通关 +{s}', { n: round, s: points });
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 800);
+    showToast(tr('▶️ 第 {n} 轮即将开始...', { n: round + 1 }));
+  }
+
+  function showEndlessGameOver(round, totalScoreFinal) {
+    lastModalRender = () => showEndlessGameOver(round, totalScoreFinal); // I18N
+    Storage.saveEndlessBest(round - 1, totalScoreFinal); // round-1 = last completed
+    const best = Storage.getEndlessBest();
+    const isNewBest = (round - 1) >= best.round && totalScoreFinal >= best.score && totalScoreFinal > 0;
+    const html = `
+      <div class="icon-row">♾️ ⏰</div>
+      <h2>${tr('挑战结束')}</h2>
+      <div class="subtitle">${isNewBest ? tr('🆕 新纪录诞生！') : tr('继续挑战，刷新纪录吧')}</div>
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('本次最远')}</div>
+          <div class="val">${tr('第 {n} 轮', { n: round })}</div>
+        </div>
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('本次得分')}</div>
+          <div class="val">${totalScoreFinal}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('历史最佳')}</div>
+          <div class="val">${tr('第 {n} 轮', { n: best.round })} · ${best.score}</div>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${tr('🔄 再来一次')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('🏠 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      showEndlessIntro();
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      showStartScreen();
+    };
+  }
+
+  /* === DAILY === modals === */
+  function showDailyIntro() {
+    lastModalRender = showDailyIntro; // I18N
+    const today = getTodayKey();
+    const result = Storage.getDailyResult();
+    const isToday = result.date === today;
+    const alreadyDone = isToday && result.completed;
+    const html = `
+      <div class="icon-row">📅</div>
+      <h2>${tr('每日挑战')}</h2>
+      <div class="subtitle">${tr('{date} · 同样的棋盘 · 比拼分数', { date: today })}</div>
+      <div class="body" style="font-size: 16px;">
+        <p>${tr('🌍 全世界今天玩的是 <b>同一个棋盘</b>')}</p>
+        <p>${tr('🎯 限时 {t} 秒 · 提示 {h} 次 · 重排 {s} 次',
+          { t: DAILY_CFG.time, h: DAILY_CFG.hints, s: DAILY_CFG.shuffles })}</p>
+        <p>${tr('🏆 系统会保留你今天的最佳成绩')}</p>
+      </div>
+      ${isToday ? `
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('今日最佳')}</div>
+          <div class="val">${result.score || 0}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('今日尝试')}</div>
+          <div class="val">${result.attempts || 0}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('状态')}</div>
+          <div class="val" style="font-size: 18px;">${result.completed ? tr('✅ 已通关') : tr('⏳ 未通关')}</div>
+        </div>
+      </div>` : ''}
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${alreadyDone ? tr('🔄 再玩一次') : tr('▶ 开始挑战')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('← 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      gameMode = 'daily';
+      score = 0;
+      totalScore = 0;
+      document.body.classList.remove('in-menu');
+      startScreen.classList.add('hidden');
+      // Wrap startLevel so the seeded RNG drives every shuffle inside initBoard.
+      withSeededRng(getDailySeed(), () => startLevel(0, DAILY_CFG));
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      showStartScreen();
+    };
+  }
+
+  function showDailyComplete(prevScore) {
+    lastModalRender = () => showDailyComplete(prevScore); // I18N
+    const today = getTodayKey();
+    Storage.recordDailyAttempt(today, prevScore, true);
+    const result = Storage.getDailyResult();
+    const html = `
+      <div class="icon-row">📅 🎉</div>
+      <h2>${tr('今日挑战 通关！')}</h2>
+      <div class="subtitle">${today}</div>
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('本次得分')}</div>
+          <div class="val">${prevScore}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="lbl">${tr('今日最佳')}</div>
+          <div class="val">${result.score}</div>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${tr('🔄 再玩一次')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('🏠 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      withSeededRng(getDailySeed(), () => startLevel(0, DAILY_CFG));
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      showStartScreen();
+    };
+  }
+
+  function showLevelIntro(idx, prev) {
+    lastModalRender = () => showLevelIntro(idx, prev); // I18N
+    const cfg = LEVELS[idx];
+    let html = '';
+    if (prev) {
+      html += `
+        <div class="icon-row">🎉</div>
+        <h2>${tr('第 {n} 关 通关！', { n: prev.idx + 1 })}</h2>
+        <div class="subtitle">${tr(LEVELS[prev.idx].name)}</div>
+        <div class="level-result-stars">${starString(prev.stars || 0)}</div>
+        <div class="modal-stats">
+          <div class="modal-stat accent">
+            <div class="lbl">${tr('本关得分')}</div>
+            <div class="val">${prev.score}</div>
+          </div>
+          <div class="modal-stat">
+            <div class="lbl">${tr('时间奖励')}</div>
+            <div class="val">+${prev.timeBonus}</div>
+          </div>
+          <div class="modal-stat">
+            <div class="lbl">${tr('累计总分')}</div>
+            <div class="val">${prev.total}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      html += `<div class="icon-row">🥘</div>`;
+    }
+    const labelText = (prev ? tr('▶ 接下来') : tr('▶ 关卡介绍'))
+                    + ' · ' + tr('第 {n} 关 / 共 {m} 关', { n: idx + 1, m: LEVELS.length });
+    const actionLabel = prev
+      ? tr('开始第 {n} 关 →', { n: idx + 1 })
+      : tr('▶ 开始第 {n} 关', { n: idx + 1 });
+    html += `
+      <div class="next-level-preview">
+        <div class="label">${labelText}</div>
+        <div class="name">${tr(cfg.name, cfg.nameVars)}</div>
+        <div class="desc">
+          ${tr(cfg.hint, cfg.hintVars)}<br>
+          ${levelDescription(cfg)}
+          <br><span class="twist">${levelTwist(cfg)}</span>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${actionLabel}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      startLevel(idx);
+    };
+  }
+
+  function showLoseModal() {
+    lastModalRender = showLoseModal; // I18N
+    const isSingle = gameMode === 'single';
+    const isDaily  = gameMode === 'daily';
+    const subtitle = isDaily  ? tr('今日挑战失败 · 还可以再试一次')
+                   : isSingle ? tr('很遗憾，本关挑战失败')
+                   :            tr('很遗憾，本次挑战失败');
+    const tip = isDaily
+      ? tr('<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">每日挑战的棋盘只有 1 个，再战一次！</p>')
+      : isSingle
+        ? tr('<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">再来一次吧！这一关熟练后会更轻松。</p>')
+        : tr('<p>⚠️ <span class="danger">必须从第 1 关重新开始！</span></p>') +
+          tr('<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">不要灰心，再来一次吧！</p>');
+    const primaryLabel = isDaily  ? tr('🔄 再试一次')
+                       : isSingle ? tr('🔄 重玩第 {n} 关', { n: levelIdx + 1 })
+                       :            tr('🔄 回到第 1 关');
+    const secondaryLabel = isDaily ? tr('🏠 返回主菜单')
+                         : isSingle ? tr('🎯 选关')
+                         :            tr('🏠 返回主菜单');
+
+    const html = `
+      <div class="icon-row">⏰ 💔</div>
+      <h2 style="background: linear-gradient(135deg, var(--danger), var(--warning)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">${tr('时间到！')}</h2>
+      <div class="subtitle">${subtitle}</div>
+      <div class="modal-stats">
+        ${isDaily ? '' : `
+        <div class="modal-stat">
+          <div class="lbl">${isSingle ? tr('关卡') : tr('到达关卡')}</div>
+          <div class="val">${levelIdx + 1}${isSingle ? '' : ' / ' + LEVELS.length}</div>
+        </div>`}
+        <div class="modal-stat accent">
+          <div class="lbl">${isDaily ? tr('本次得分') : tr('本关得分')}</div>
+          <div class="val">${score}</div>
+        </div>
+        ${isSingle || isDaily ? '' : `
+        <div class="modal-stat">
+          <div class="lbl">${tr('最终总分')}</div>
+          <div class="val">${totalScore + score}</div>
+        </div>`}
+      </div>
+      <div class="body" style="text-align: center;">${tip}</div>
+      <div class="modal-buttons">
+        <button class="primary-btn ${(!isSingle && !isDaily) ? 'danger-btn' : ''}" id="modalActionBtn">${primaryLabel}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${secondaryLabel}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      if (isDaily) {
+        withSeededRng(getDailySeed(), () => startLevel(0, DAILY_CFG));
+      } else if (isSingle) {
+        showLevelIntro(levelIdx, null);
+      } else {
+        totalScore = 0;
+        score = 0;
+        showLevelIntro(0, null);
+      }
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      if (isDaily) {
+        showStartScreen();
+      } else if (isSingle) {
+        showLevelSelect();
+      } else {
+        totalScore = 0;
+        score = 0;
+        showStartScreen();
+      }
+    };
+  }
+
+  function showFinalWinModal() {
+    lastModalRender = showFinalWinModal; // I18N
+    const html = `
+      <div class="icon-row">🏆 🎉 🍽️</div>
+      <h2>${tr('恭喜全部通关！')}</h2>
+      <div class="subtitle">${tr('你完成了全部 {n} 道菜的挑战', { n: LEVELS.length })}</div>
+      <div class="modal-stats">
+        <div class="modal-stat accent">
+          <div class="lbl">${tr('最终总分')}</div>
+          <div class="val">${totalScore}</div>
+        </div>
+      </div>
+      <div class="body" style="text-align: center;">
+        <p>${tr('🎊 <b>你真是位大厨！</b> 🎊')}</p>
+        ${tr('<p style="color: var(--text-3); font-size: 16px; margin-top: 8px;">挑战自我，再来一局？</p>')}
+      </div>
+      <div class="modal-buttons">
+        <button class="primary-btn" id="modalActionBtn">${tr('🔄 再玩一次')}</button>
+        <button class="secondary-btn" id="modalSecondBtn">${tr('🏠 返回主菜单')}</button>
+      </div>
+    `;
+    showModal(html);
+    document.getElementById('modalActionBtn').onclick = () => {
+      hideModal();
+      totalScore = 0;
+      score = 0;
+      showLevelIntro(0, null);
+    };
+    document.getElementById('modalSecondBtn').onclick = () => {
+      hideModal();
+      totalScore = 0;
+      score = 0;
+      showStartScreen();
+    };
+  }
+
+  // ============= Event handlers =============
+  hintBtn.addEventListener('click', doHint);
+  shuffleBtn.addEventListener('click', () => doShuffle(false));
+  pauseBtn.addEventListener('click', togglePause);
+  pauseOverlay.addEventListener('click', togglePause);
+  menuBtn.addEventListener('click', returnToMenu);
+
+  // AUDIO: sound toggle + reflect persisted state on load
+  function refreshSoundBtn() {
+    soundBtn.textContent = SFX.isMuted() ? '🔇' : '🔊';
+    soundBtn.classList.toggle('muted', SFX.isMuted());
+  }
+  soundBtn.addEventListener('click', () => {
+    SFX.setMuted(!SFX.isMuted());
+    refreshSoundBtn();
+    if (!SFX.isMuted()) SFX.play('click');
+  });
+  refreshSoundBtn();
+
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      togglePause();
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      soundBtn.click();
+    }
+  });
+  // AUDIO: kick the AudioContext awake on every user gesture (not just the first).
+  // CrazyGames docs warn that iOS suspends the context after interruptions
+  // (calls, screen-lock, app switching), and visibility-change alone is not
+  // enough to revive it — only a real user gesture works. So we resume on
+  // every pointerdown / touchend / keydown for the lifetime of the page.
+  const primeAudio = () => { SFX.resume(); };
+  window.addEventListener('pointerdown', primeAudio, { passive: true });
+  window.addEventListener('touchend',    primeAudio, { passive: true });
+  window.addEventListener('keydown',     primeAudio);
+  // CRAZYGAMES: when the tab becomes visible again, also call resume() so the
+  // context attempts to come back online — the next gesture will then succeed.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) SFX.resume();
+  });
+  // CRAZYGAMES: auto-pause when the tab is hidden so the timer doesn't burn
+  // through the player's level while they're away. We never auto-resume —
+  // the player returns to the pause overlay and clicks to continue.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !paused && !gameOver && !levelComplete &&
+        gameMode !== 'tutorial' && tileEls && tileEls.length) {
+      setPaused(true);
+    }
+  });
+  startGameBtn.addEventListener('click', () => {
+    hideStartScreen();
+    gameMode = 'campaign';   // PROGRESS: full 8-level run
+    totalScore = 0;
+    score = 0;
+    runFirstPlayTutorialThen(() => showLevelIntro(0, null));
+  });
+  document.getElementById('levelSelectBtn').addEventListener('click', () => {
+    hideStartScreen();
+    showLevelSelect();
+  });
+  document.getElementById('themeBtn').addEventListener('click', showThemePicker);
+  document.getElementById('endlessBtn').addEventListener('click', () => {
+    hideStartScreen();
+    showEndlessIntro();
+  });
+  document.getElementById('dailyBtn').addEventListener('click', () => {
+    hideStartScreen();
+    showDailyIntro();
+  });
+  // I18N: language toggle on start screen + in HUD
+  document.getElementById('langBtn').addEventListener('click', () => {
+    toggleLang();
+    SFX.play('click');
+  });
+  document.getElementById('langBtnHud').addEventListener('click', () => {
+    toggleLang();
+    SFX.play('click');
+  });
+
+  // POWERUPS: wire each button to its power-up name (data-pu attribute).
+  // (Esc-to-disarm was removed because Esc collides with the browser's
+  //  fullscreen toggle on the CrazyGames host page; per their guidelines we
+  //  avoid common keys. Clicking the same power-up button toggles it off.)
+  Object.keys(puButtons).forEach(name => {
+    puButtons[name].btn.addEventListener('click', () => activatePowerUp(name));
+  });
+  // PERF: debounce resize and only rebuild DOM if tile size actually changed
+  // (mobile address-bar show/hide fires resize a lot — don't thrash the board).
+  let resizeRaf = 0;
+  window.addEventListener('resize', () => {
+    if (gameOver && pairsLeft === 0) return;
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      const newSize = calcTileSize();
+      if (newSize === TILE_SIZE && boardBuiltDims &&
+          boardBuiltDims.rows === ROWS && boardBuiltDims.cols === COLS) return;
+      TILE_SIZE = newSize;
+      renderBoard();
+    });
+  });
+
+  // CRAZYGAMES: bracket the setup work with loadingStart / loadingStop so the
+  // SDK can measure load time + decide whether to show a pre-roll on the host.
+  // For a single-file HTML build the work between these calls is just the
+  // theme + i18n bootstrap, which is near-instant — but the markers are still
+  // required for full launch metrics.
+  CG.loadingStart();
+
+  // THEMES: load persisted theme before any board/UI is touched.
+  applyTheme(Storage.getTheme());
+
+  // I18N: apply persisted language now that all data-i18n nodes exist.
+  applyStaticI18n();
+  const lb0 = document.getElementById('langBtn');
+  if (lb0) lb0.textContent = currentLang === 'en' ? '🌐 EN / 中' : '🌐 中 / EN';
+  const lb0h = document.getElementById('langBtnHud');
+  if (lb0h) lb0h.textContent = currentLang === 'en' ? '🌐 EN' : '🌐 中';
+
+  // CRAZYGAMES: setup done — game is interactive on the start screen.
+  CG.loadingStop();
+
+  // Start screen is shown by default (body has .in-menu class).
+  // Game begins when user clicks "开始游戏".
+})();
+</script>
+</body>
+</html>
